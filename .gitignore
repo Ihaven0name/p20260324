@@ -12,3 +12,4 @@ Saved
 *.suo
 *.xcodeproj
 *.xcworkspace
+!Plugins/Unlua/Source/ThirdParty/Lua/lua-5.4.3/**
