@@ -11,7 +11,9 @@
 			"AdditionalDependencies": [
 				"Engine",
 				"AIModule",
-				"GameplayAbilities"
+				"GameplayAbilities",
+				"UMG",
+				"CoreUObject"
 			]
 		}
 	],
@@ -25,6 +27,22 @@
 		},
 		{
 			"Name": "GameplayAbilities",
+			"Enabled": true
+		},
+		{
+			"Name": "GASAttachEditor",
+			"Enabled": true
+		},
+		{
+			"Name": "AnimationLocomotionLibrary",
+			"Enabled": true
+		},
+		{
+			"Name": "AnimationWarping",
+			"Enabled": true
+		},
+		{
+			"Name": "MotionWarping",
 			"Enabled": true
 		}
 	]
