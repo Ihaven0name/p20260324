@@ -4,6 +4,7 @@
     <attachedFolders>
       <Path>Content/Script</Path>
       <Path>Plugins</Path>
+      <Path>Plugins/UnLua/Content/IntelliSense</Path>
     </attachedFolders>
     <explicitIncludes />
     <explicitExcludes />

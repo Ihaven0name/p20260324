@@ -6,12 +6,11 @@
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "ProjectThreadSafeFunctionLibrary.generated.h"
 
-/**
- * 
- */
-UCLASS()
+UCLASS(meta=(BlueprintThreadSafe))
 class P20260324_API UProjectThreadSafeFunctionLibrary : public UBlueprintFunctionLibrary
 {
 	GENERATED_BODY()
-	
+public:
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	static float GetAngleFromVectors(FVector ReferenceDir, FVector TargetDir);
 };

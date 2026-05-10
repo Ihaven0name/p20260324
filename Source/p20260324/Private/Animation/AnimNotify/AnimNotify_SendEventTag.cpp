@@ -1,10 +1,10 @@
-#include "Animation/AnimNotify/AN_SendEventTag.h"
+#include "Animation/AnimNotify/AnimNotify_SendEventTag.h"
 
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemInterface.h"
 #include "AbilitySystemComponent.h"
 
-void UAN_SendEventTag::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation,
+void UAnimNotify_SendEventTag::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation,
 	const FAnimNotifyEventReference& EventReference)
 {
 	Super::Notify(MeshComp, Animation, EventReference);

@@ -3,3 +3,9 @@
 
 #include "Player/ProjectPlayerState.h"
 
+AProjectPlayerState::AProjectPlayerState()
+{
+}
+
+
+

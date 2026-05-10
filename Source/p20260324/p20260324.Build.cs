@@ -8,7 +8,7 @@ public class p20260324 : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore","GameplayTags","GameplayTasks","GameplayAbilities", "EnhancedInput" });
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore","GameplayTags","GameplayTasks","GameplayAbilities", "EnhancedInput","Lua","UnLua" ,"LuaFrameWork", "CommonUI","CommonInput" });
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
 

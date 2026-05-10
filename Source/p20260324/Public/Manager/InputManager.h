@@ -13,5 +13,4 @@ UCLASS()
 class P20260324_API UInputManager : public UGameInstanceSubsystem
 {
 	GENERATED_BODY()
-	
 };

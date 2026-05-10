@@ -10,15 +10,15 @@ end
 
 function WorldService:LuaOnWorldBeginPlay()
     print("WorldService:LuaOnWorldBeginPlay")
-    local path='/Game/Blueprint/UI/LuaTest/WBP_Start.WBP_Start_C'
+    --local path='/Game/Blueprint/UI/LuaTest/WBP_Start.WBP_Start_C'
     
     ---@type UUserWidget
-    local widget=self:GetWidgetByPath(path)
-    widget:AddToViewport()
+    --local widget=self:GetWidgetByPath(path)
+    --widget:AddToViewport()
 end
 
 function WorldService:LuaDeinit()
-    print("WorldService:LuaDeinit")
+    
 end
 
 return WorldService

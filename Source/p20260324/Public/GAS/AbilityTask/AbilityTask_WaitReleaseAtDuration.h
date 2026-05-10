@@ -2,22 +2,22 @@
 
 #include "CoreMinimal.h"
 #include "Abilities/Tasks/AbilityTask.h"
-#include "AbilityTask_WaitInputAtDuration.generated.h"
+#include "AbilityTask_WaitReleaseAtDuration.generated.h"
 
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnAtDurationEndSignature);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAtDurationEndSignature,bool,bReleaseAtDuration);
 
 
 
 UCLASS()
-class P20260324_API UAbilityTask_WaitInputAtDuration : public UAbilityTask
+class P20260324_API UAbilityTask_WaitReleaseAtDuration : public UAbilityTask
 {
 	GENERATED_BODY()
 public:
 	virtual void Activate() override;
 	
 	UPROPERTY(BlueprintAssignable)
-	FOnAtDurationEndSignature FOnAtDurationEndSignature;
+	FOnAtDurationEndSignature OnAtDurationEndSignature;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float TaskDuration;
 	
@@ -26,15 +26,19 @@ public:
 	UPROPERTY()
 	float StartTime=0.f;
 	UPROPERTY()
-	bool bTestInitialState;
+	bool bTestInitialState=false;
 	
     FDelegateHandle DelegateHandle;
+	FTimerHandle TimerHandle;
 	
 	UFUNCTION(BlueprintCallable, Category = "Ability|Tasks", meta = (HidePin = "OwningAbility", DefaultToSelf = "OwningAbility", BlueprintInternalUseOnly = "TRUE"))
-	static UAbilityTask_WaitInputAtDuration* CreateWaitInputAtDuration(UGameplayAbility* OwningAbility, FName TaskInstanceName, float Duration);
+	static UAbilityTask_WaitReleaseAtDuration* CreateWaitInputAtDuration(UGameplayAbility* OwningAbility, FName TaskInstanceName, float Duration);
 	UFUNCTION()
 	void OnReleaseCallback();
+	bool RemoveEventAndClearTimer();
 	UFUNCTION()
 	void OnAtDurationEndFunction();
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_OnDurationReached();
 	
 };

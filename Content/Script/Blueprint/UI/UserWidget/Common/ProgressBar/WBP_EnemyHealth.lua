@@ -28,6 +28,7 @@ function M:Construct()
     self.bRedInterp = false
     self.bRedDelayActive = false
     self.enemyCharacter = nil
+    self.TimerHandle=nil
 end
 
 --- 每帧更新：Red 血条缓动插值（FInterpTo）
@@ -66,7 +67,8 @@ function M:OnEnemyHealthPercentChangedFunction(NewPercent)
 
     if NewPercent >= self.ProgressBar_Green.Percent then
         -- ========== 恢复生命 ==========
-        self:CancelRedDelay()
+        self.ClearTimer()
+        self.bRedDelayActive = false
         self.bRedInterp = false
 
         self.ProgressBar_Gray:SetPercent(NewPercent)
@@ -91,34 +93,38 @@ function M:OnEnemyHealthPercentChangedFunction(NewPercent)
         elseif self.bRedDelayActive then
             -- 延迟等待中 → 重置计时，更新待执行值
             self.pendingTargetPercent = NewPercent
-            self:ClearLuaTimer("RedDelay")
-            self:SetLuaTimer("RedDelay", RED_DELAY, false)
+            self:ClearTimer()
+            self:SetTimer()
         else
             -- 无活跃延迟也无插值 → 开始新的延迟
             self.pendingTargetPercent = NewPercent
             self.bRedDelayActive = true
-            self:SetLuaTimer("RedDelay", RED_DELAY, false)
+            self:SetTimer()
         end
     end
 end
 
---- 取消 Red 延迟 + 关闭插值状态
-function M:CancelRedDelay()
-    self:ClearLuaTimer("RedDelay")
-    self.bRedDelayActive = false
-    self.bRedInterp = false
-end
 
 --- 定时器回调：延迟结束 → 开始让 Red 缓动追赶 Green
-function M:OnLuaTimerEvent(TimerName)
-    if TimerName == "RedDelay" then
-        self.bRedDelayActive = false
-        self.targetPercent = self.pendingTargetPercent
-        self.bRedInterp = true
-        self:ClearLuaTimer("RedDelay")
-    end
+function M:SetTimer()
+    self.TimerHandle=UE.UKismetSystemLibrary.K2_SetTimerDelegate({self,self.OnRedDelayEndFunction},RED_DELAY,false)
 end
 
+function M:ClearTimer()
+    if self then
+        if (self.TimerHandle == nil) then
+            UE.UKismetSystemLibrary.K2_ClearAndInvalidateTimerHandle(self,self.TimerHandle)
+        end
+    end
+    
+end
+
+function M:OnRedDelayEndFunction()
+    self.bRedDelayActive = false
+    self.targetPercent = self.pendingTargetPercent
+    self.bRedInterp = true
+    self:ClearTimer()
+end
 --- 恢复动画开始事件
 function M:RecoveryHealth_AnimStart(ProgressBar_Gray)
     self.bGrayIsActive = true
@@ -129,5 +135,7 @@ function M:RecoveryHealth_AnimEnd(ProgressBar_Gray)
     self.bGrayIsActive = false
     self.ProgressBar_Green:SetPercent(ProgressBar_Gray.Percent)
 end
+
+
 
 return M

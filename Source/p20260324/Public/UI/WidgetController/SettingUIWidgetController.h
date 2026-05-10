@@ -9,7 +9,7 @@
 /**
  * 
  */
-UCLASS()
+UCLASS(Blueprintable)
 class P20260324_API USettingUIWidgetController : public UProjectWidgetController
 {
 	GENERATED_BODY()

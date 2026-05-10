@@ -1,70 +1,110 @@
-#include "GAS/AbilityTask/AbilityTask_WaitInputAtDuration.h"
+#include "GAS/AbilityTask/AbilityTask_WaitReleaseAtDuration.h"
 
 #include "AbilitySystemComponent.h"
 
-void UAbilityTask_WaitInputAtDuration::Activate()
+void UAbilityTask_WaitReleaseAtDuration::Activate()
 {
-	Super::Activate();
-	if (Ability->GetCurrentActorInfo()->PlayerController.Get()->IsLocalController())
+	StartTime = GetWorld()->GetTimeSeconds();
+	UAbilitySystemComponent* ASC = AbilitySystemComponent.Get();
+	if (ASC && Ability)
 	{
-		
-	}
-	else
-	{
-		const FGameplayAbilitySpecHandle& TempSpecHandle=GetAbilitySpecHandle();
-		const FPredictionKey& TempKey=GetActivationPredictionKey(); 
-		AbilitySystemComponent.Get()->AbilityTargetDataSetDelegate(TempSpecHandle,TempKey).AddUObject(this,&UAbilityTask_SpawnForwardCursor::AbilityTargetDataSetFunction);
-		const bool bCalledDelegate= AbilitySystemComponent.Get()->CallReplicatedTargetDataDelegatesIfSet(TempSpecHandle,TempKey);
-		if (!bCalledDelegate)
+		if (bTestInitialState && IsLocallyControlled())
 		{
-			SetWaitingOnRemotePlayerData();
+			FGameplayAbilitySpec *Spec = Ability->GetCurrentAbilitySpec();
+			if (Spec && !Spec->InputPressed)
+			{
+				OnReleaseCallback();
+				return;
+			}
 		}
+
+		DelegateHandle = ASC->AbilityReplicatedEventDelegate(EAbilityGenericReplicatedEvent::InputReleased, GetAbilitySpecHandle(), GetActivationPredictionKey()).AddUObject(this, &UAbilityTask_WaitReleaseAtDuration::OnReleaseCallback);
+		if (IsForRemoteClient())
+		{
+			if (!ASC->CallReplicatedEventDelegateIfSet(EAbilityGenericReplicatedEvent::InputReleased, GetAbilitySpecHandle(), GetActivationPredictionKey()))
+			{
+				SetWaitingOnRemotePlayerData();
+			}
+		}
+		//客户端和服务器都设置一个Timer，客户端进行预测，服务器进行验证
+  		GetWorld()->GetTimerManager().SetTimer(
+			TimerHandle,
+			this,
+			&ThisClass::OnAtDurationEndFunction,
+			TaskDuration
+		);
 	}
 }
 
-UAbilityTask_WaitInputAtDuration* UAbilityTask_WaitInputAtDuration::CreateWaitInputAtDuration(
+UAbilityTask_WaitReleaseAtDuration* UAbilityTask_WaitReleaseAtDuration::CreateWaitInputAtDuration(
 	UGameplayAbility* OwningAbility,
 	const FName TaskInstanceName,
 	const float Duration)
 {
-	UAbilityTask_WaitInputAtDuration* TaskInstance = NewObject<UAbilityTask_WaitInputAtDuration>(OwningAbility,TaskInstanceName);
+	UAbilityTask_WaitReleaseAtDuration* TaskInstance = NewAbilityTask<UAbilityTask_WaitReleaseAtDuration>(OwningAbility,TaskInstanceName);
 	TaskInstance->TaskDuration = Duration;
 	return TaskInstance;
 }
 
-void UAbilityTask_WaitInputAtDuration::OnReleaseCallback()
+void UAbilityTask_WaitReleaseAtDuration::OnReleaseCallback()
 {
+	if (!RemoveEventAndClearTimer()) return;
 	float ElapsedTime = GetWorld()->GetTimeSeconds() - StartTime;
-
 	UAbilitySystemComponent* ASC = AbilitySystemComponent.Get();
-	if (!Ability || !ASC)
-	{
-		return;
-	}
-
-	ASC->AbilityReplicatedEventDelegate(EAbilityGenericReplicatedEvent::InputReleased, GetAbilitySpecHandle(), GetActivationPredictionKey()).Remove(DelegateHandle);
-
-	FScopedPredictionWindow ScopedPrediction(ASC, IsPredictingClient());
-
 	if (IsPredictingClient())
 	{
-		// Tell the server about this
 		ASC->ServerSetReplicatedEvent(EAbilityGenericReplicatedEvent::InputReleased, GetAbilitySpecHandle(), GetActivationPredictionKey(), ASC->ScopedPredictionKey);
 	}
 	else
 	{
 		ASC->ConsumeGenericReplicatedEvent(EAbilityGenericReplicatedEvent::InputReleased, GetAbilitySpecHandle(), GetActivationPredictionKey());
 	}
-
-	// We are done. Kill us so we don't keep getting broadcast messages
+	if (Ability)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s:Time:%f"),*Ability->GetClass()->GetName(), ElapsedTime);
+	}
+	else
+	{
+		UE_LOG(LogTemp,Warning,TEXT("wei sha a"));
+	}
 	if (ShouldBroadcastAbilityTaskDelegates())
 	{
-		OnRelease.Broadcast(ElapsedTime);
+		OnAtDurationEndSignature.Broadcast(true);
 	}
 	EndTask();
 }
 
-void UAbilityTask_WaitInputAtDuration::OnAtDurationEndFunction()
+
+
+void UAbilityTask_WaitReleaseAtDuration::OnAtDurationEndFunction()
+{
+	if (!RemoveEventAndClearTimer()) return;
+	if (Ability->HasAuthority(&Ability->GetCurrentActivationInfoRef()))
+	{
+		Multicast_OnDurationReached();
+	}
+}
+
+void UAbilityTask_WaitReleaseAtDuration::Multicast_OnDurationReached_Implementation()
 {
 	
+	if (ShouldBroadcastAbilityTaskDelegates())
+	{
+		// false 表示是由计时器触发（长按），而不是由松手触发（短按）
+		OnAtDurationEndSignature.Broadcast(false);
+		EndTask();
+	}
+}
+
+bool UAbilityTask_WaitReleaseAtDuration::RemoveEventAndClearTimer()
+{
+	UAbilitySystemComponent* ASC = AbilitySystemComponent.Get();
+	if (!Ability || !ASC)
+	{
+		return false;
+	}
+	ASC->AbilityReplicatedEventDelegate(EAbilityGenericReplicatedEvent::InputReleased, GetAbilitySpecHandle(), GetActivationPredictionKey()).Remove(DelegateHandle);
+	FScopedPredictionWindow ScopedPrediction(ASC, IsPredictingClient());
+	GetWorld()->GetTimerManager().ClearTimer(TimerHandle);
+	return true;
 }

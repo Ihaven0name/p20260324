@@ -1,7 +1,9 @@
 #include "GAS/ProjectAbilitySystemGlobals.h"
 
-// FGameplayEffectContext* UProjectAbilitySystemGlobals::AllocGameplayEffectContext() const
-// {
-// 	return new FProjectGame();
-// 	
-// }
+#include "GAS/ProjectGameplayEffectType.h"
+
+FGameplayEffectContext* UProjectAbilitySystemGlobals::AllocGameplayEffectContext() const
+{
+	return new FProjectGameplayEffectContext();
+	
+}

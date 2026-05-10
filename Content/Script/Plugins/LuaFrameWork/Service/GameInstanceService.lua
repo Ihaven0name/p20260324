@@ -1,8 +1,10 @@
 local GameInstanceService = UnLua.Class()
+local UIManagerService = require("Service.UIManager")
 
 function GameInstanceService:LuaInit()
     print("GameIns LuaInit")
     _G.GameInstanceService = self
+    _G.UIManagerService=UIManagerService
 end
 
 function GameInstanceService:LuaDeinit()

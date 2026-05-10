@@ -3,6 +3,7 @@
 #include "AbilitySystemComponent.h"
 #include "GAS/ProjectAbilitySystemComponent.h"
 #include "AbilitySystemBlueprintLibrary.h"
+#include "GAS/ProjectBlueprintFunctionLibrary.h"
 
 UAbilityBase_Judge::UAbilityBase_Judge()
 {
@@ -32,98 +33,86 @@ void UAbilityBase_Judge::EndAbility(
 	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 }
 
-TSubclassOf<UGameplayAbility> UAbilityBase_Judge::GetTargetAbilityClass() const
+void UAbilityBase_Judge::OnGiveAbility(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec)
 {
+	Super::OnGiveAbility(ActorInfo, Spec);
+	ShortPressLength=ShortPressInputData.Num();
+	LongPressLength=LongPressInputData.Num();
+}
+
+void UAbilityBase_Judge::TryActivateAbilityFromJudge(const bool bIsShortPress)
+{
+	UAbilitySystemComponent* ASC=GetAbilitySystemComponentFromActorInfo();
+	FGameplayAbilitySpec Spec;
 	if (bIsShortPress)
 	{
-		
+		for (uint8 i=0; i<ShortPressLength; i++)
+		{
+			if (UProjectBlueprintFunctionLibrary::CanActivateAbilityAndOutputSpec(ASC,ShortPressInputData[ShortPressIndex].AbilityTag,Spec))
+			{
+				ASC->TryActivateAbility(Spec.Handle);
+				ShortPressIndex+=1;
+				if (ShortPressIndex==ShortPressLength)
+				{
+					ShortPressIndex=0;
+				}
+				break;
+			}
+			ShortPressIndex+=1;
+			if (ShortPressIndex==ShortPressLength)
+			{
+				ShortPressIndex=0;
+			}
+		}
 	}
-	return LongPressTargetAbility;
+	else
+	{
+		for (uint8 i=0; i<LongPressLength; i++)
+		{
+			if (UProjectBlueprintFunctionLibrary::CanActivateAbilityAndOutputSpec(ASC,LongPressInputData[LongPressIndex].AbilityTag,Spec))
+			{
+				ASC->TryActivateAbility(Spec.Handle);
+				LongPressIndex+=1;
+				if (LongPressIndex==LongPressLength)
+				{
+					LongPressIndex=0;
+				}
+				break;
+			}
+			LongPressIndex+=1;
+			if (LongPressIndex==LongPressLength)
+			{
+				LongPressIndex=0;
+			}
+		}
+	}
+	
 }
 
 void UAbilityBase_Judge::WaitReleaseAtDuration()
 {
 	if (!bOpenPressThreshold)
 	{
-		// 不启用蓄力检测，直接激活目标 Ability 并结束
-		TSubclassOf<UGameplayAbility> TargetClass = GetTargetAbilityClass();
-		if (TargetClass)
-		{
-			UProjectAbilitySystemComponent* ProjectASC = Cast<UProjectAbilitySystemComponent>(GetAbilitySystemComponentFromActorInfo());
-			if (ProjectASC)
-			{
-				ProjectASC->AbilityJudgeTagPressed(TargetClass);
-			}
-		}
+		//不开始使用按压阈值，默认是短按技能
+		TryActivateAbilityFromJudge(true);
 		K2_EndAbility();
 		return;
 	}
 
 	// 创建蓄力等待 Task
-	CurrentWaitReleaseTask = UAbilityTask_WaitReleaseAtDuration::CreateWaitInputAtDuration(
+	UAbilityTask_WaitReleaseAtDuration* CurrentWaitReleaseTask = UAbilityTask_WaitReleaseAtDuration::CreateWaitInputAtDuration(
 		this,
 		TEXT("JudgeWaitReleaseAtDuration"),
 		PressThreshold
 	);
 
-	if (bIsShortPress)
-	{
-		CurrentWaitReleaseTask->OnAtDurationEndSignature.AddDynamic(this, &ThisClass::OnAtDurationEndForShortPress);
-	}
-	else
-	{
-		CurrentWaitReleaseTask->OnAtDurationEndSignature.AddDynamic(this, &ThisClass::OnAtDurationEndForLongPress);
-	}
-
+	CurrentWaitReleaseTask->OnAtDurationEndSignature.AddDynamic(this, &ThisClass::OnAtDurationEndPress);
 	CurrentWaitReleaseTask->ReadyForActivation();
 }
 
-void UAbilityBase_Judge::OnAtDurationEndForShortPress(const bool bReleaseAtDuration)
+void UAbilityBase_Judge::OnAtDurationEndPress(const bool bReleaseAtDuration)
 {
-	/*
-	 * 短按模式：
-	 * - bReleaseAtDuration == true  → 在 Duration 前松手了（短按） → 激活目标
-	 * - bReleaseAtDuration == false → 到达 Duration 还没松手（长按）→ 结束不激活
-	 */
-	if (bReleaseAtDuration)
-	{
-		// 短按：松手了，激活目标 Ability
-		TSubclassOf<UGameplayAbility> TargetClass = GetTargetAbilityClass();
-		if (TargetClass)
-		{
-			UProjectAbilitySystemComponent* ProjectASC = Cast<UProjectAbilitySystemComponent>(GetAbilitySystemComponentFromActorInfo());
-			if (ProjectASC)
-			{
-				ProjectASC->AbilityJudgeTagPressed(TargetClass);
-			}
-		}
-	}
-	
-	// 无论是否成功激活目标 Ability，Judge 本身都结束
-	K2_EndAbility();
-}
-
-void UAbilityBase_Judge::OnAtDurationEndForLongPress(const bool bReleaseAtDuration)
-{
-	/*
-	 * 长按模式：
-	 * - bReleaseAtDuration == true  → 在 Duration 前松手了（短按）→ 结束不激活
-	 * - bReleaseAtDuration == false → 到达 Duration 还没松手（长按）→ 激活目标
-	 */
-	if (!bReleaseAtDuration)
-	{
-		// 长按：到达 Duration 且未松手，激活目标 Ability
-		TSubclassOf<UGameplayAbility> TargetClass = GetTargetAbilityClass();
-		if (TargetClass)
-		{
-			UProjectAbilitySystemComponent* ProjectASC = Cast<UProjectAbilitySystemComponent>(GetAbilitySystemComponentFromActorInfo());
-			if (ProjectASC)
-			{
-				ProjectASC->AbilityJudgeTagPressed(TargetClass);
-			}
-		}
-	}
-	
+	TryActivateAbilityFromJudge(bReleaseAtDuration);
 	// 无论是否成功激活目标 Ability，Judge 本身都结束
 	K2_EndAbility();
 }

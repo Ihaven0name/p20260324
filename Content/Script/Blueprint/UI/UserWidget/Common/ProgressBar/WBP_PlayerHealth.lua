@@ -9,9 +9,15 @@
 ---@type WBP_PlayerHealth_C
 local M = UnLua.Class()
 
---function M:Initialize(Initializer)
---end
 
+function M:Initialize(Initializer)
+    ---@type BP_MainAttackUIWidgetController_C
+    self.MainAttackUIWidgetController=nil
+end
+
+function M:AfterSetWidgetController()
+    self.MainAttackUIWidgetController=self:GetWidgetController()
+end
 --function M:PreConstruct(IsDesignTime)
 --end
 

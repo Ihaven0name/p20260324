@@ -1,25 +1,40 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
-#include "UObject/Interface.h"
+#include "GameplayTagContainer.h"
 #include "PlayerInterface.generated.h"
 
-// This class does not need to be modified.
 UINTERFACE(MinimalAPI)
 class UPlayerInterface : public UInterface
 {
 	GENERATED_BODY()
 };
 
-/**
- * 
- */
 class P20260324_API IPlayerInterface
 {
 	GENERATED_BODY()
-
-	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
+	// ============ 预输入相关 ========================
+	UFUNCTION(BlueprintNativeEvent,BlueprintCallable)
+	bool GetCanPreInput();
+	UFUNCTION(BlueprintNativeEvent,BlueprintCallable)
+	void SetCanPreInput(const bool InbCanPreInput);
+	UFUNCTION(BlueprintNativeEvent,BlueprintCallable)
+	void GetPreInputTag(TArray<FGameplayTag>& OutPreInputTag);
+	UFUNCTION(BlueprintNativeEvent,BlueprintCallable)
+	bool FindActivatableAbilityTag();
+	UFUNCTION(BlueprintNativeEvent,BlueprintCallable)
+	void AddAbilityTag();
+	UFUNCTION(BlueprintNativeEvent,BlueprintCallable)
+	void ClearPreInputTag();
+	UFUNCTION(BlueprintNativeEvent,BlueprintCallable, Category="Weapon")
+	FName GetLeftHandSocketName();
+	UFUNCTION(BlueprintNativeEvent,BlueprintCallable, Category="Weapon")
+	FName GetRightHandSocketName();
+	UFUNCTION(BlueprintNativeEvent,BlueprintCallable)
+	bool GetbIsLocking();
+	UFUNCTION(BlueprintNativeEvent,BlueprintCallable)
+	AActor* GetLockingActor();
+	UFUNCTION(BlueprintNativeEvent,BlueprintCallable)
+	EPlayerCategory GetPlayerCategory();
 };

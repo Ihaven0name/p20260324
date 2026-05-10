@@ -18,6 +18,7 @@ class P20260324_API UAbilityBase_Judge : public UGameplayAbilityBase
 public:
 	UAbilityBase_Judge();
 
+protected:
 	virtual void ActivateAbility(
 		const FGameplayAbilitySpecHandle Handle,
 		const FGameplayAbilityActorInfo* ActorInfo,
@@ -32,8 +33,16 @@ public:
 		bool bReplicateEndAbility,
 		bool bWasCancelled
 	) override;
+	virtual void OnGiveAbility(
+		const FGameplayAbilityActorInfo* ActorInfo,
+		const FGameplayAbilitySpec& Spec
+	) override;
+	
+	UFUNCTION(BlueprintCallable, Category = "Ability")
+	void TryActivateAbilityFromJudge(const bool bIsShortPress);
 
-protected:
+public:
+	
 	// ==========================================
 	// 蓄力判断相关变量（与 Ability_CrouchCombo 一致）
 	// ==========================================
@@ -41,10 +50,6 @@ protected:
 	/** 是否启用蓄力阈值检测 */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Config")
 	bool bOpenPressThreshold = true;
-
-	/** true=短按触发目标Ability / false=长按触发目标Ability */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Config")
-	bool bIsShortPress = true;
 
 	/** 蓄力判定阈值（秒），超过此时间为长按，否则为短按 */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Config")
@@ -56,30 +61,29 @@ protected:
 
 	/** 短按时要激活的目标 Ability 类 */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Target")
-	TSubclassOf<UGameplayAbility> ShortPressTargetAbility;
+	TArray<FAbilityInputData> ShortPressInputData;
 
 	/** 长按时要激活的目标 Ability 类 */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Target")
-	TSubclassOf<UGameplayAbility> LongPressTargetAbility;
+	TArray<FAbilityInputData> LongPressInputData;
+
+	UPROPERTY()
+	uint8 ShortPressIndex=0;
+	UPROPERTY()
+	uint8 ShortPressLength=0;
+	UPROPERTY()
+	uint8 LongPressIndex=0;
+	UPROPERTY()
+	uint8 LongPressLength=0;
 
 protected:
 	/** 启动蓄力等待 Task */
 	UFUNCTION(BlueprintCallable)
 	void WaitReleaseAtDuration();
 
-	/** 短按回调：在 Duration 之前松手 → bReleaseAtDuration=true → 激活 ShortPressTargetAbility 或 LongPressTargetAbility */
+	
 	UFUNCTION(BlueprintCallable)
-	void OnAtDurationEndForShortPress(const bool bReleaseAtDuration);
+	void OnAtDurationEndPress(const bool bReleaseAtDuration);
 
-	/** 长按回调：到达 Duration 还没松手 → bReleaseAtDuration=false → 激活对应 TargetAbility */
-	UFUNCTION(BlueprintCallable)
-	void OnAtDurationEndForLongPress(const bool bReleaseAtDuration);
-
-	/** 根据当前配置获取应该激活的目标 Ability 类 */
-	UFUNCTION(BlueprintCallable)
-	TSubclassOf<UGameplayAbility> GetTargetAbilityClass() const;
-
-private:
-	/** 当前正在运行的蓄力等待 Task 引用（用于 End 时清理） */
-	UAbilityTask_WaitReleaseAtDuration* CurrentWaitReleaseTask = nullptr;
+	
 };

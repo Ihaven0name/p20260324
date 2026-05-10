@@ -8,6 +8,6 @@ UCLASS()
 class P20260324_API UProjectAbilitySystemGlobals : public UAbilitySystemGlobals
 {
 	GENERATED_BODY()
-// public:
-// 	virtual FGameplayEffectContext* AllocGameplayEffectContext() const override;
+public:
+	virtual FGameplayEffectContext* AllocGameplayEffectContext() const override;
 };

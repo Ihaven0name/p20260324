@@ -1,7 +1,6 @@
 #pragma once
 
-class LogChannel
-{
-public:
-	
-};
+#include "CoreMinimal.h"
+#include "Logging/LogMacros.h"
+
+DECLARE_LOG_CATEGORY_EXTERN(LogProject, Log, All);

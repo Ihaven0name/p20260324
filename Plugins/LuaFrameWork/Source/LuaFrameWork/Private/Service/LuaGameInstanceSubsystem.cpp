@@ -3,3 +3,18 @@
 
 #include "Service/LuaGameInstanceSubsystem.h"
 
+bool ULuaGameInstanceSubsystem::ShouldCreateSubsystem(UObject* Outer) const
+{
+	return true;
+}
+
+void ULuaGameInstanceSubsystem::Initialize(FSubsystemCollectionBase& Collection)
+{
+	LuaInit();
+}
+
+void ULuaGameInstanceSubsystem::Deinitialize()
+{
+	
+	LuaDeinit();
+}
