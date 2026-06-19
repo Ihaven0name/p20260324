@@ -14,7 +14,7 @@ public:
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 	virtual void Deinitialize() override;
 
-	void RefreshAbilityTagInCDO();
+	void RefreshSingleAbilityTagInCDO(FName ChangedRowName);
 	static FAbilityTagConfig* FindAbilityTagConfigByRowName(FName RowName);
 	static TObjectPtr<UDataTable> AbilityTagConfigDataTable;
 	

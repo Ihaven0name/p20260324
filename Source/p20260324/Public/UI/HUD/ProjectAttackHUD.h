@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/HUD.h"
-#include "UI/Widget/ProjectCommonUserWidget.h"
+#include "UI/Widget/ProjectCommonActivatableWidget.h"
 #include "UI/Widget/ProjectMainUIUserWidget.h"
 #include "ProjectAttackHUD.generated.h"
 

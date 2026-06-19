@@ -15,7 +15,6 @@ class UProjectGameInstance;
 struct FInputActionValue;
 class UProjectAbilitySystemComponent;
 class UInputAction;
-class UInputMappingContext;
 
 UCLASS()
 class P20260324_API AProjectPlayerController : public APlayerController
@@ -110,9 +109,9 @@ public:
 	UPROPERTY()
 	bool bCanGenerateSettingUI=true;
 
-	// 当前激活的角色专属 IMC（用于切换时 Remove）
-	UPROPERTY()
-	TObjectPtr<UInputMappingContext> ActiveSpecialIMC = nullptr;
+	// 当前激活的角色专属 IMC Tag（用于切换时 Remove）
+	UPROPERTY(BlueprintReadOnly, Category="Input")
+	FGameplayTag CurrentSpecialIMCTag;
 
 	/** 切换角色输入：移除旧角色的 SpecialIMC，添加新角色的 */
 	UFUNCTION(BlueprintCallable)
@@ -135,8 +134,6 @@ public:
 	void JumpActionFunction(const FInputActionValue& Value);
 	void LockOnActionFunction(const FInputActionValue& Value);
 	void LockSwitchActionFunction(const FInputActionValue& Value);
-	void BindInputMappingContext();
-
 
 	// 技能输入回调（接收 AbilityTag）— 原有逻辑，绑定目标 Ability
 	void OnAbilityInputStarted(const FGameplayTag AbilityTag);
@@ -162,6 +159,10 @@ public:
 	 */
 	UFUNCTION(BlueprintCallable)
 	void UpdateLockOnRotationInterpolation(float DeltaTime);
+
+
+	UFUNCTION(Server, Reliable)
+	void Server_SwitchCharacter(int32 TargetIndex);
 	
 };
 

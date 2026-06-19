@@ -61,14 +61,23 @@ void AProjectPlayerCharacter::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);
 	SetOwner(NewController);
-	InitAbilityActorInfo();
+}
+
+void AProjectPlayerCharacter::NotifyControllerChanged()
+{
+	Super::NotifyControllerChanged();
+	if (!GetController()) return;
+	if (IsLocallyControlled())
+	{
+		GetProjectPlayerController()->SwitchCharacterIMC(PlayerCategory);
+	}
 }
 
 void AProjectPlayerCharacter::OnRep_Controller()
 {
 	Super::OnRep_Controller();
 	SetOwner(GetController());
-	InitAbilityActorInfo();
+	
 }
 
 void AProjectPlayerCharacter::InitAbilityActorInfo()
@@ -76,7 +85,6 @@ void AProjectPlayerCharacter::InitAbilityActorInfo()
 	GetAbilitySystemComponent()->InitAbilityActorInfo(this, this);
 	
 	// 只有服务端才 Give Ability（客户端通过 Replication 自动同步 Spec）
-	
 	if (HasAuthority())
 	{
 		GetAbilitySystemComponent()->GiveAbilitiesFromInputInfo();
@@ -86,6 +94,12 @@ void AProjectPlayerCharacter::InitAbilityActorInfo()
 	// 初始化属性 GE（MMC + Override）—— 两端都需要初始化本地属性
 	UProjectBlueprintFunctionLibrary::InitializePlayerAttributeByEffect(GetAbilitySystemComponent(), PlayerCategory);
 	
+}
+
+void AProjectPlayerCharacter::OnRep_PlayerState()
+{
+	Super::OnRep_PlayerState();
+	InitAbilityActorInfo();
 }
 
 bool AProjectPlayerCharacter::GetCanPreInput_Implementation()
@@ -156,30 +170,4 @@ AProjectPlayerState* AProjectPlayerCharacter::GetProjectPlayerState()
 	}
 	return ProjectPlayerState;
 }
-
-void AProjectPlayerCharacter::CalculateCurrentLevel(const int32 TempXP, int& OutLevel, int& OutXP)
-{
-	UConfigManager* ConfigManager= UProjectBlueprintFunctionLibrary::GetConfigManager(this);
-	OutLevel=GetAttributeSet()->GetLevel();
-	OutXP=GetAttributeSet()->GetXP()+TempXP;
-	while (OutLevel<ConfigManager->PlayerLevelBound)
-	{
-		const int NeedXP=ConfigManager->GetNeedXPAtLevel(OutLevel);
-		if (OutXP>=NeedXP)
-		{
-			OutXP-=NeedXP;
-			OutLevel+=1;
-		}
-		else
-		{
-			break;
-		}
-	}
-	if (OutLevel==ConfigManager->PlayerLevelBound)
-	{
-		OutXP=0;
-	}
-}
-
-
 

@@ -7,7 +7,7 @@
 --
 
 ---@type WBP_AttributeMenu_C
-local M = UnLua.Class()
+local M = UnLua.Class(WidgetClassMap.CommonWidgetClass)
 
 function M:Initialize(Initializer)
     ---@type BP_AttributeUIWidgetController_C
@@ -33,59 +33,28 @@ function M:AfterSetWidgetController()
     self.WBP_TextValue_MaxHealth:SetWidgetController(self.AttributeWidgetController)
     self.WBP_TextValue_MaxMana:SetWidgetController(self.AttributeWidgetController)
     self.WBP_XPBar:SetWidgetController(self.AttributeWidgetController)
-    self.WBP_Button_AddXP:SetWidgetController(self.AttributeWidgetController)
+    self.WBP_Button_AddLevel:SetWidgetController(self.AttributeWidgetController)
     self.WBP_AddLevelPanel:SetWidgetController(self.AttributeWidgetController)
     
-    self:AddBindingFunction()
-    
-end
-
-
-function M:AddBindingFunction()
+    self.AttributeWidgetController.OnChangeWidgetControllerParamSignature:Remove(self,self.Switcher_OnChangeParam)
     self.AttributeWidgetController.OnChangeWidgetControllerParamSignature:Add(self,self.Switcher_OnChangeParam)
-    self.WBP_Button_AddXP.Button.OnClicked:Add(self,self.OnClicked_Button_AddXP)
-    self.WBP_AddLevelPanel.WBP_Button_Use.Button.OnClicked:Add(self,self.OnClicked_Button_UseMaterial)
-    self.WBP_AddLevelPanel.WBP_Button_Close.Button.OnClicked:Add(self,self.OnClicked_Button_Close)
-    self.WBP_AddLevelPanel.WBP_XP_Interact_Small.WBP_XP_Small.Button.OnClicked:Add(self,self.OnClicked_ThreeXPMaterial)
-    self.WBP_AddLevelPanel.WBP_XP_Interact_Medium.WBP_XP_Medium.Button.OnClicked:Add(self,self.OnClicked_ThreeXPMaterial)
-    self.WBP_AddLevelPanel.WBP_XP_Interact_Large.WBP_XP_Large.Button.OnClicked:Add(self,self.OnClicked_ThreeXPMaterial)
-    self.WBP_AddLevelPanel.WBP_XP_Interact_Small.WBP_Button_Reduce.Button.OnClicked:Add(self,self.OnClicked_ThreeXPMaterial)
-    self.WBP_AddLevelPanel.WBP_XP_Interact_Medium.WBP_Button_Reduce.Button.OnClicked:Add(self,self.OnClicked_ThreeXPMaterial)
-    self.WBP_AddLevelPanel.WBP_XP_Interact_Large.WBP_Button_Reduce.Button.OnClicked:Add(self,self.OnClicked_ThreeXPMaterial)
-    
-    
+
+    self.AttributeWidgetController.OnSwitcherIndexChangedSignature:Remove(self,self.Switcher_ChangeIndex)
+    self.AttributeWidgetController.OnSwitcherIndexChangedSignature:Add(self,self.Switcher_ChangeIndex)
+
+    self.WBP_Button_AddLevel:SetOnClickedCallback({self,function()
+        self:Switcher_ChangeIndex(1)
+    end})
 end
 
-function M:OnClicked_Button_AddXP()
-    self.CommonActivatableWidgetSwitcher:SetActiveWidgetIndex(1)
-end
 
-function M:OnClicked_Button_UseMaterial()
-    self.AttributeWidgetController.OnAcceptXPElementsSignature:Broadcast(
-            self.WBP_AddLevelPanel.WBP_XP_Interact_Small.SelectNumber,
-            self.WBP_AddLevelPanel.WBP_XP_Interact_Medium.SelectNumber,
-            self.WBP_AddLevelPanel.WBP_XP_Interact_Large.SelectNumber
-    )
-    self.WBP_AddLevelPanel.WBP_XP_Interact_Small.SelectNumber=0
-    self.WBP_AddLevelPanel.WBP_XP_Interact_Medium.SelectNumber=0
-    self.WBP_AddLevelPanel.WBP_XP_Interact_Large.SelectNumber=0
-    self.CommonActivatableWidgetSwitcher:SetActiveWidgetIndex(0)
-end
-
-function M:OnClicked_Button_Close()
-    self.CommonActivatableWidgetSwitcher:SetActiveWidgetIndex(0)
-end
 
 function M:Switcher_OnChangeParam()
-    self.CommonActivatableWidgetSwitcher:SetActiveWidgetIndex(0)
+    self:Switcher_ChangeIndex(0)
 end
 
-
-function M:OnClicked_ThreeXPMaterial()
-    self.AttributeWidgetController.OnSelectXPElementsSignature:Broadcast(
-            self.WBP_AddLevelPanel.WBP_XP_Interact_Small.SelectNumber,
-            self.WBP_AddLevelPanel.WBP_XP_Interact_Medium.SelectNumber,
-            self.WBP_AddLevelPanel.WBP_XP_Interact_Large.SelectNumber
-    )
+function M:Switcher_ChangeIndex(Index)
+    self.CommonActivatableWidgetSwitcher:SetActiveWidgetIndex(Index)
 end
+
 return M

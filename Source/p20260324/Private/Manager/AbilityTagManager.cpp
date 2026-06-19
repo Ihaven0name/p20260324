@@ -1,37 +1,79 @@
 #include "Manager/AbilityTagManager.h"
 
+#include "AssetRegistry/AssetRegistryModule.h"
+#include "Engine/Blueprint.h"
 #include "GAS/GA/GameplayAbilityBase.h"
+#include "Kismet2/BlueprintEditorUtils.h"
+#include "Misc/PackageName.h"
+#include "Modules/ModuleManager.h"
 
 TObjectPtr<UDataTable> UAbilityTagManager::AbilityTagConfigDataTable;
 void UAbilityTagManager::Initialize(FSubsystemCollectionBase& Collection)
 {
 	Super::Initialize(Collection);
 	AbilityTagConfigDataTable=LoadObject<UDataTable>(nullptr, TEXT("/Game/Blueprint/DataTable/DT_AbilityTagConfig.DT_AbilityTagConfig"));
-	AbilityTagConfigDataTable->OnDataTableChanged().AddUObject(this,&ThisClass::RefreshAbilityTagInCDO);
 }
 
 void UAbilityTagManager::Deinitialize()
 {
-	AbilityTagConfigDataTable->OnDataTableChanged().RemoveAll(this);
 	Super::Deinitialize();
 }
 
-void UAbilityTagManager::RefreshAbilityTagInCDO()
+void UAbilityTagManager::RefreshSingleAbilityTagInCDO(FName ChangedRowName)
 {
-	for (TObjectIterator<UClass> It; It; ++It)
+	if (ChangedRowName.IsNone())
 	{
-		UClass* Class = *It;
-		if (!Class)
+		return;
+	}
+
+	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
+	IAssetRegistry& AssetRegistry = AssetRegistryModule.Get();
+
+	TSet<FTopLevelAssetPath> DerivedClassNames;
+	{
+		TArray<FTopLevelAssetPath> BaseClassNames;
+		BaseClassNames.Add(UGameplayAbilityBase::StaticClass()->GetClassPathName());
+
+		TSet<FTopLevelAssetPath> ExcludedClassNames;
+		AssetRegistry.GetDerivedClassNames(BaseClassNames, ExcludedClassNames, DerivedClassNames);
+	}
+
+	FARFilter Filter;
+	Filter.ClassPaths.Add(UBlueprint::StaticClass()->GetClassPathName());
+	Filter.bRecursiveClasses = true;
+	Filter.bRecursivePaths = true;
+
+	TArray<FAssetData> BlueprintAssets;
+	AssetRegistry.GetAssets(Filter, BlueprintAssets);
+
+	for (const FAssetData& Asset : BlueprintAssets)
+	{
+		const FAssetTagValueRef GeneratedClassTag = Asset.TagsAndValues.FindTag(TEXT("GeneratedClass"));
+		if (!GeneratedClassTag.IsSet())
 		{
 			continue;
 		}
 
-		if (!Class->IsChildOf(UGameplayAbilityBase::StaticClass()))
+		const FString ClassObjectPath = FPackageName::ExportTextPathToObjectPath(GeneratedClassTag.GetValue());
+		if (ClassObjectPath.IsEmpty())
 		{
 			continue;
 		}
 
-		if (Class->HasAnyClassFlags(CLASS_Abstract))
+		const FTopLevelAssetPath ClassPath(ClassObjectPath);
+		if (!DerivedClassNames.Contains(ClassPath))
+		{
+			continue;
+		}
+
+		UBlueprint* Blueprint = Cast<UBlueprint>(Asset.GetAsset());
+		if (!Blueprint)
+		{
+			continue;
+		}
+
+		UClass* Class = LoadObject<UClass>(nullptr, *ClassObjectPath);
+		if (!Class || Class->HasAnyClassFlags(CLASS_Abstract))
 		{
 			continue;
 		}
@@ -42,7 +84,17 @@ void UAbilityTagManager::RefreshAbilityTagInCDO()
 			continue;
 		}
 
+		if (CDO->AbilityTagName != ChangedRowName)
+		{
+			continue;
+		}
+
+		Blueprint->Modify();
+		CDO->Modify();
 		CDO->InitializeTags();
+		FBlueprintEditorUtils::MarkBlueprintAsModified(Blueprint);
+		Blueprint->MarkPackageDirty();
+		break;
 	}
 }
 FAbilityTagConfig* UAbilityTagManager::FindAbilityTagConfigByRowName(FName RowName)

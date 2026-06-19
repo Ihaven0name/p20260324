@@ -13,13 +13,14 @@
 
 void UAttributeWidgetController::BindCallback()
 {
+	Super::BindCallback();
 	for (TTuple<FGameplayTag,FGameplayAttribute> &TempPair:FProjectGameplayTag::TagToAttributeMap)
 	{
-		AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(TempPair.Value).AddLambda([TempPair, this](const FOnAttributeChangeData& InAttributeData)
+		WidgetControllerParam.AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(TempPair.Value).AddLambda([TempPair, this](const FOnAttributeChangeData& InAttributeData)
 		{
 			FProjectAttributeInfo AuroAttributeInfo;
 			AuroAttributeInfo.AttributeTag=TempPair.Key;
-			AuroAttributeInfo.AttributeValue=TempPair.Value.GetNumericValue(AttributeSet);
+			AuroAttributeInfo.AttributeValue=TempPair.Value.GetNumericValue(WidgetControllerParam.AttributeSet);
 			OnAttributeChangeSignature.Broadcast(AuroAttributeInfo);
 		});
 	}
@@ -35,28 +36,12 @@ void UAttributeWidgetController::BroadcastInitialAttribute() const
 	{
 		FProjectAttributeInfo AuroAttributeInfo;
 		AuroAttributeInfo.AttributeTag=TempPair.Key;
-		AuroAttributeInfo.AttributeValue=TempPair.Value.GetNumericValue(AttributeSet);
+		AuroAttributeInfo.AttributeValue=TempPair.Value.GetNumericValue(WidgetControllerParam.AttributeSet);
 		OnAttributeChangeSignature.Broadcast(AuroAttributeInfo);
 	}
 }
 
-void UAttributeWidgetController::BindingInputActionByTag(const FGameplayTag InputActionTag)
-{
-	UE_LOG(LogProject, Warning, TEXT("BindingInputActionByTag In MainAttackUIWidgetController"));
-	const FProjectGameplayTag& ProjectGameplayTag=FProjectGameplayTag::Get();
-	if (InputActionTag.MatchesTagExact(ProjectGameplayTag.UI_Action_Attribute_RemoveAttributeUI))
-	{
-		CloseAttributeUIActionFunction(ProjectGameplayTag.UI_Widget_Attribute);
-	}
-}
 
-void UAttributeWidgetController::CloseAttributeUIActionFunction(const FGameplayTag WidgetTag)
-{
-	if (UUIManager* UIManager=UProjectBlueprintFunctionLibrary::GetUIManager(PlayerController))
-	{
-		UIManager->PopWidget(WidgetTag);
-	}
-}
 
 void UAttributeWidgetController::OnAcceptXPElementsFunction(const int32 SmallElement, const int32 MediumElement, const int32 LargeElement)
 {
@@ -77,9 +62,9 @@ void UAttributeWidgetController::OnAcceptXPElementsFunction(const int32 SmallEle
 			MediumElement*ProjectGameInstance->XPTagToXPValue[ProjectGameplayTag.Inventory_Material_Experience_Medium]+
 			LargeElement*ProjectGameInstance->XPTagToXPValue[ProjectGameplayTag.Inventory_Material_Experience_Large];
 		const UAttributeInfo* AttributeInfo=ConfigManager->GetAttributeInfo();
-		UProjectAbilitySystemComponent* ProjectAbilitySystemComponent=PlayerCharacter->GetAbilitySystemComponent();
+		UProjectAbilitySystemComponent* ProjectAbilitySystemComponent=WidgetControllerParam.PlayerCharacter->GetAbilitySystemComponent();
 		FGameplayEffectContextHandle EffectContextHandle=ProjectAbilitySystemComponent->MakeEffectContext();
-		EffectContextHandle.AddSourceObject(PlayerCharacter);
+		EffectContextHandle.AddSourceObject(WidgetControllerParam.PlayerCharacter);
 		FGameplayEffectSpecHandle EffectSpecHandle=ProjectAbilitySystemComponent->MakeOutgoingSpec(AttributeInfo->AddIncomingXPEffectClass,1.f,EffectContextHandle);
 		UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(EffectSpecHandle,ProjectGameplayTag.Attribute_Meta_IncomingXP,TempXP);
 		ProjectAbilitySystemComponent->ApplyGameplayEffectSpecToSelf(*EffectSpecHandle.Data.Get());
@@ -95,8 +80,8 @@ void UAttributeWidgetController::OnSelectXPElementsFunction(const int32 SmallEle
 	const FProjectGameplayTag& ProjectGameplayTag=FProjectGameplayTag::Get();
 	if (SmallElement==0 && MediumElement==0 && LargeElement==0)
 	{
-		const FProjectAttributeInfo LevelAttributeInfo=FProjectAttributeInfo(ProjectGameplayTag.Attribute_Primary_Level,AttributeSet->GetLevel());
-		const FProjectAttributeInfo XPAttributeInfo=FProjectAttributeInfo(ProjectGameplayTag.Attribute_Primary_XP,AttributeSet->GetXP()); 
+		const FProjectAttributeInfo LevelAttributeInfo=FProjectAttributeInfo(ProjectGameplayTag.Attribute_Primary_Level,WidgetControllerParam.AttributeSet->GetLevel());
+		const FProjectAttributeInfo XPAttributeInfo=FProjectAttributeInfo(ProjectGameplayTag.Attribute_Primary_XP,WidgetControllerParam.AttributeSet->GetXP()); 
 		OnAttributeChangeSignature.Broadcast(LevelAttributeInfo);
 		OnAttributeChangeSignature.Broadcast(XPAttributeInfo);
 		bCanApproachBound=false;
@@ -110,7 +95,7 @@ void UAttributeWidgetController::OnSelectXPElementsFunction(const int32 SmallEle
 		LargeElement*ProjectGameInstance->XPTagToXPValue[ProjectGameplayTag.Inventory_Material_Experience_Large];
 	int CalculateLevel=0;
 	int CalculateXP=0;
-	UProjectBlueprintFunctionLibrary::CalculateCurrentLevel(AttributeSet,TempXP,CalculateLevel,CalculateXP);
+	UProjectBlueprintFunctionLibrary::CalculateCurrentLevel(WidgetControllerParam.AttributeSet,TempXP,CalculateLevel,CalculateXP);
 	//可以到达经验上限
 	if (CalculateLevel==ConfigManager->PlayerLevelBound)
 	{
@@ -120,4 +105,9 @@ void UAttributeWidgetController::OnSelectXPElementsFunction(const int32 SmallEle
 	OnAttributeChangeSignature.Broadcast(LevelAttributeInfo);
 	OnTemporaryLevelAndXPChangeSignature.Broadcast(CalculateLevel,CalculateXP);
 	bCanApproachBound=false;
+}
+
+void UAttributeWidgetController::RequestChangeSwitcherIndex(const int32 NewIndex)
+{
+	OnSwitcherIndexChangedSignature.Broadcast(NewIndex);
 } 

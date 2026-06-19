@@ -6,7 +6,7 @@
 -- @DATE ${date} ${time}
 --
 
----@type WBP_Test_C
+---@type WBP_InventorySlot_C
 local M = UnLua.Class()
 
 --function M:Initialize(Initializer)

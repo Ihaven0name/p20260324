@@ -56,6 +56,7 @@ function M:AfterSetWidgetController()
     end
 
     -- 绑定委托（函数引用格式）
+    self.enemyCharacter.OnEnemyHealthPercentChanged:Remove(self, self.OnEnemyHealthPercentChangedFunction)
     self.enemyCharacter.OnEnemyHealthPercentChanged:Add(self, self.OnEnemyHealthPercentChangedFunction)
     -- 初始化血量显示
     self:OnEnemyHealthPercentChangedFunction(1.0)

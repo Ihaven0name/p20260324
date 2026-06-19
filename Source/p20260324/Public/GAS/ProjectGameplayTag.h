@@ -6,255 +6,530 @@
 
 struct FGameplayAttribute;
 
+
+
 USTRUCT(BlueprintType)
 struct FProjectGameplayTag
 {
 	GENERATED_BODY()
+
 	
-public:
 	static FProjectGameplayTag& Get() { return GameplayTags; }
 	static void InitGameplayTags();
 	bool bIsInitialized = false;
 
+
 	// ==========================================
 	// 鼠标按键 (Mouse)
 	// ==========================================
-	FGameplayTag Input_Mouse_LMB;       // 左键
-	FGameplayTag Input_Mouse_RMB;       // 右键
-	FGameplayTag Input_Mouse_MMB;       // 中键
-	FGameplayTag Input_Mouse_X1;        // 侧键1 (后退)
-	FGameplayTag Input_Mouse_X2;        // 侧键2 (前进)
+	UPROPERTY(EditDefaultsOnly, Category = "Input|Mouse")
+	FGameplayTag Input_Mouse_LMB;
+	UPROPERTY(EditDefaultsOnly, Category = "Input|Mouse")
+	FGameplayTag Input_Mouse_RMB;
+	UPROPERTY(EditDefaultsOnly, Category = "Input|Mouse")
+	FGameplayTag Input_Mouse_MMB;
+	UPROPERTY(EditDefaultsOnly, Category = "Input|Mouse")
+	FGameplayTag Input_Mouse_X1;
+	UPROPERTY(EditDefaultsOnly, Category = "Input|Mouse")
+	FGameplayTag Input_Mouse_X2;
 
 	// ==========================================
-	// 键盘 - 功能键与修饰键 (Function & Modifiers)
+	// 键盘 - 功能键与修饰键
 	// ==========================================
+	UPROPERTY(EditDefaultsOnly, Category = "Input|Keyboard")
 	FGameplayTag Input_Keyboard_Escape;
+	UPROPERTY(EditDefaultsOnly, Category = "Input|Keyboard")
 	FGameplayTag Input_Keyboard_Tab;
+	UPROPERTY(EditDefaultsOnly, Category = "Input|Keyboard")
 	FGameplayTag Input_Keyboard_CapsLock;
-	
+	UPROPERTY(EditDefaultsOnly, Category = "Input|Keyboard")
 	FGameplayTag Input_Keyboard_LeftShift;
+	UPROPERTY(EditDefaultsOnly, Category = "Input|Keyboard")
 	FGameplayTag Input_Keyboard_RightShift;
-	
+	UPROPERTY(EditDefaultsOnly, Category = "Input|Keyboard")
 	FGameplayTag Input_Keyboard_LeftControl;
+	UPROPERTY(EditDefaultsOnly, Category = "Input|Keyboard")
 	FGameplayTag Input_Keyboard_RightControl;
-	
+	UPROPERTY(EditDefaultsOnly, Category = "Input|Keyboard")
 	FGameplayTag Input_Keyboard_LeftAlt;
+	UPROPERTY(EditDefaultsOnly, Category = "Input|Keyboard")
 	FGameplayTag Input_Keyboard_RightAlt;
-	
-	FGameplayTag Input_Keyboard_Space;     // 空格
+	UPROPERTY(EditDefaultsOnly, Category = "Input|Keyboard")
+	FGameplayTag Input_Keyboard_Space;
 
-	// ==========================================
-	// 键盘 - 通用修饰键 (Common Modifiers)
-	// ==========================================
+	UPROPERTY(EditDefaultsOnly, Category = "Input|Keyboard")
 	FGameplayTag Input_Keyboard_Modifier_Shift;
+	UPROPERTY(EditDefaultsOnly, Category = "Input|Keyboard")
 	FGameplayTag Input_Keyboard_Modifier_Control;
+	UPROPERTY(EditDefaultsOnly, Category = "Input|Keyboard")
 	FGameplayTag Input_Keyboard_Modifier_Alt;
 
 	// ==========================================
-	// 键盘 - 数字键 (Number Row 0-9)
+	// 键盘 - 数字键
 	// ==========================================
+	UPROPERTY(EditDefaultsOnly, Category = "Input|Keyboard")
 	FGameplayTag Input_Keyboard_1;
+	UPROPERTY(EditDefaultsOnly, Category = "Input|Keyboard")
 	FGameplayTag Input_Keyboard_2;
+	UPROPERTY(EditDefaultsOnly, Category = "Input|Keyboard")
 	FGameplayTag Input_Keyboard_3;
+	UPROPERTY(EditDefaultsOnly, Category = "Input|Keyboard")
 	FGameplayTag Input_Keyboard_4;
+	UPROPERTY(EditDefaultsOnly, Category = "Input|Keyboard")
 	FGameplayTag Input_Keyboard_5;
+	UPROPERTY(EditDefaultsOnly, Category = "Input|Keyboard")
 	FGameplayTag Input_Keyboard_6;
+	UPROPERTY(EditDefaultsOnly, Category = "Input|Keyboard")
 	FGameplayTag Input_Keyboard_7;
+	UPROPERTY(EditDefaultsOnly, Category = "Input|Keyboard")
 	FGameplayTag Input_Keyboard_8;
+	UPROPERTY(EditDefaultsOnly, Category = "Input|Keyboard")
 	FGameplayTag Input_Keyboard_9;
+	UPROPERTY(EditDefaultsOnly, Category = "Input|Keyboard")
 	FGameplayTag Input_Keyboard_0;
 
 	// ==========================================
-	// 键盘 - 字母键 (A-Z)
+	// 键盘 - 字母键
 	// ==========================================
-	// Row 1
+	UPROPERTY(EditDefaultsOnly, Category = "Input|Keyboard")
 	FGameplayTag Input_Keyboard_Q;
+	UPROPERTY(EditDefaultsOnly, Category = "Input|Keyboard")
 	FGameplayTag Input_Keyboard_W;
+	UPROPERTY(EditDefaultsOnly, Category = "Input|Keyboard")
 	FGameplayTag Input_Keyboard_E;
+	UPROPERTY(EditDefaultsOnly, Category = "Input|Keyboard")
 	FGameplayTag Input_Keyboard_R;
+	UPROPERTY(EditDefaultsOnly, Category = "Input|Keyboard")
 	FGameplayTag Input_Keyboard_T;
+	UPROPERTY(EditDefaultsOnly, Category = "Input|Keyboard")
 	FGameplayTag Input_Keyboard_Y;
+	UPROPERTY(EditDefaultsOnly, Category = "Input|Keyboard")
 	FGameplayTag Input_Keyboard_U;
+	UPROPERTY(EditDefaultsOnly, Category = "Input|Keyboard")
 	FGameplayTag Input_Keyboard_I;
+	UPROPERTY(EditDefaultsOnly, Category = "Input|Keyboard")
 	FGameplayTag Input_Keyboard_O;
+	UPROPERTY(EditDefaultsOnly, Category = "Input|Keyboard")
 	FGameplayTag Input_Keyboard_P;
-
-	// Row 2
+	UPROPERTY(EditDefaultsOnly, Category = "Input|Keyboard")
 	FGameplayTag Input_Keyboard_A;
+	UPROPERTY(EditDefaultsOnly, Category = "Input|Keyboard")
 	FGameplayTag Input_Keyboard_S;
+	UPROPERTY(EditDefaultsOnly, Category = "Input|Keyboard")
 	FGameplayTag Input_Keyboard_D;
+	UPROPERTY(EditDefaultsOnly, Category = "Input|Keyboard")
 	FGameplayTag Input_Keyboard_F;
+	UPROPERTY(EditDefaultsOnly, Category = "Input|Keyboard")
 	FGameplayTag Input_Keyboard_G;
+	UPROPERTY(EditDefaultsOnly, Category = "Input|Keyboard")
 	FGameplayTag Input_Keyboard_H;
+	UPROPERTY(EditDefaultsOnly, Category = "Input|Keyboard")
 	FGameplayTag Input_Keyboard_J;
+	UPROPERTY(EditDefaultsOnly, Category = "Input|Keyboard")
 	FGameplayTag Input_Keyboard_K;
+	UPROPERTY(EditDefaultsOnly, Category = "Input|Keyboard")
 	FGameplayTag Input_Keyboard_L;
-
-	// Row 3
+	UPROPERTY(EditDefaultsOnly, Category = "Input|Keyboard")
 	FGameplayTag Input_Keyboard_Z;
+	UPROPERTY(EditDefaultsOnly, Category = "Input|Keyboard")
 	FGameplayTag Input_Keyboard_X;
+	UPROPERTY(EditDefaultsOnly, Category = "Input|Keyboard")
 	FGameplayTag Input_Keyboard_C;
+	UPROPERTY(EditDefaultsOnly, Category = "Input|Keyboard")
 	FGameplayTag Input_Keyboard_V;
+	UPROPERTY(EditDefaultsOnly, Category = "Input|Keyboard")
 	FGameplayTag Input_Keyboard_B;
+	UPROPERTY(EditDefaultsOnly, Category = "Input|Keyboard")
 	FGameplayTag Input_Keyboard_N;
+	UPROPERTY(EditDefaultsOnly, Category = "Input|Keyboard")
 	FGameplayTag Input_Keyboard_M;
 
 	// ==========================================
-	// 键盘 - 系统键与符号 (System & Punctuation)
+	// 键盘 - 系统键与符号
 	// ==========================================
-	FGameplayTag Input_Keyboard_Tilde;        // ~
-	FGameplayTag Input_Keyboard_Minus;        // -
-	FGameplayTag Input_Keyboard_Equals;       // =
-	FGameplayTag Input_Keyboard_LeftBracket;  // [
-	FGameplayTag Input_Keyboard_RightBracket; // ]
-	FGameplayTag Input_Keyboard_Backslash;    // \键
-	FGameplayTag Input_Keyboard_Semicolon;    // ;
-	FGameplayTag Input_Keyboard_Quote;        // '
-	FGameplayTag Input_Keyboard_Comma;        // ,
-	FGameplayTag Input_Keyboard_Period;       // .
-	FGameplayTag Input_Keyboard_Slash;        // /
+	UPROPERTY(EditDefaultsOnly, Category = "Input|System")
+	FGameplayTag Input_Keyboard_Tilde;
+	UPROPERTY(EditDefaultsOnly, Category = "Input|System")
+	FGameplayTag Input_Keyboard_Minus;
+	UPROPERTY(EditDefaultsOnly, Category = "Input|System")
+	FGameplayTag Input_Keyboard_Equals;
+	UPROPERTY(EditDefaultsOnly, Category = "Input|System")
+	FGameplayTag Input_Keyboard_LeftBracket;
+	UPROPERTY(EditDefaultsOnly, Category = "Input|System")
+	FGameplayTag Input_Keyboard_RightBracket;
+	UPROPERTY(EditDefaultsOnly, Category = "Input|System")
+	FGameplayTag Input_Keyboard_Backslash;
+	UPROPERTY(EditDefaultsOnly, Category = "Input|System")
+	FGameplayTag Input_Keyboard_Semicolon;
+	UPROPERTY(EditDefaultsOnly, Category = "Input|System")
+	FGameplayTag Input_Keyboard_Quote;
+	UPROPERTY(EditDefaultsOnly, Category = "Input|System")
+	FGameplayTag Input_Keyboard_Comma;
+	UPROPERTY(EditDefaultsOnly, Category = "Input|System")
+	FGameplayTag Input_Keyboard_Period;
+	UPROPERTY(EditDefaultsOnly, Category = "Input|System")
+	FGameplayTag Input_Keyboard_Slash;
 
 	// ==========================================
-	// Ability - 技能标签
+	// Ability - 技能
 	// ==========================================
-	FGameplayTag Ability_Offensive_Crouch_Attack_NormalAttack_Combo1;   // 蹲下普通攻击连段1
-	FGameplayTag Ability_Offensive_Crouch_Attack_NormalAttack_Combo2;   // 蹲下普通攻击连段2
-	FGameplayTag Ability_Offensive_Crouch_Attack_NormalAttack_Combo3;   // 蹲下普通攻击连段3
-	FGameplayTag Ability_Offensive_Crouch_Attack_NormalAttack_Combo4;   // 蹲下普通攻击连段4
-	FGameplayTag Ability_Offensive_Crouch_Skill_Dash;             // 蹲下技能-冲刺
-	FGameplayTag Ability_Offensive_Crouch_Attack_HeavyAttack_Combo1;	//重攻击
+	UPROPERTY(EditDefaultsOnly, Category = "Ability")
+	FGameplayTag Ability_Offensive_Crouch_Attack_NormalAttack_Combo1;
+	UPROPERTY(EditDefaultsOnly, Category = "Ability")
+	FGameplayTag Ability_Offensive_Crouch_Attack_NormalAttack_Combo2;
+	UPROPERTY(EditDefaultsOnly, Category = "Ability")
+	FGameplayTag Ability_Offensive_Crouch_Attack_NormalAttack_Combo3;
+	UPROPERTY(EditDefaultsOnly, Category = "Ability")
+	FGameplayTag Ability_Offensive_Crouch_Attack_NormalAttack_Combo4;
+	UPROPERTY(EditDefaultsOnly, Category = "Ability")
+	FGameplayTag Ability_Offensive_Crouch_Skill_Dash;
+	UPROPERTY(EditDefaultsOnly, Category = "Ability")
+	FGameplayTag Ability_Offensive_Crouch_Attack_HeavyAttack_Combo1;
+	UPROPERTY(EditDefaultsOnly, Category = "Ability")
 	FGameplayTag Ability_Offensive_Crouch_Roll;
-
-	FGameplayTag Ability_Passive;                                // 被动技能（父标签，用于区分主动/被动）
-
-	// ==========================================
-	// Ability Judge - 预输入判定标签
-	// 每个 InputAction 对应一个 Judge Tag，用于绑定输入并激活 Judge Ability
-	// ==========================================
-	FGameplayTag Ability_Judge_Crouch_Attack;                     // 攻击判定
-	FGameplayTag Ability_Judge_Crouch_Skill;                // 冲刺技能判定
-	FGameplayTag Ability_Judge_Crouch_Roll;                      // 翻滚判定
+	UPROPERTY(EditDefaultsOnly, Category = "Ability")
+	FGameplayTag Ability_Passive;
 
 	// ==========================================
-	// Ability Effect - 技能效果/状态效果标签
+	// Ability Judge
 	// ==========================================
-	FGameplayTag Ability_Effect_KnockBack;                       // 击退效果
+	UPROPERTY(EditDefaultsOnly, Category = "Ability|Judge")
+	FGameplayTag Ability_Judge_Crouch_Attack;
+	UPROPERTY(EditDefaultsOnly, Category = "Ability|Judge")
+	FGameplayTag Ability_Judge_Crouch_Skill;
+	UPROPERTY(EditDefaultsOnly, Category = "Ability|Judge")
+	FGameplayTag Ability_Judge_Crouch_Roll;
 
 	// ==========================================
-	// Ability Condition - 技能条件标签（用于判断是否可以进行下一步）
+	// Ability Effect
 	// ==========================================
-	FGameplayTag Ability_Condition_Offensive_Crouch_Attack_NormalAttack_Combo1;   // 蹲下普通攻击连段1条件
-	FGameplayTag Ability_Condition_Offensive_Crouch_Attack_NormalAttack_Combo2;   // 蹲下普通攻击连段2条件
-	FGameplayTag Ability_Condition_Offensive_Crouch_Attack_NormalAttack_Combo3;   // 蹲下普通攻击连段3条件
-	FGameplayTag Ability_Condition_Offensive_Crouch_Attack_NormalAttack_Combo4;   // 蹲下普通攻击连段4条件
-	FGameplayTag Ability_Condition_Offensive_Crouch_Attack_HeavyAttack_Combo1;   //重攻击连段1条件
-	FGameplayTag Ability_Condition_Offensive_Crouch_Skill_Dash;           // 蹲下技能-冲刺条件
+	UPROPERTY(EditDefaultsOnly, Category = "Ability|Effect")
+	FGameplayTag Ability_Effect_KnockBack;
+
+	// ==========================================
+	// Ability Condition
+	// ==========================================
+	UPROPERTY(EditDefaultsOnly, Category = "Ability|Condition")
+	FGameplayTag Ability_Condition_Offensive_Crouch_Attack_NormalAttack_Combo1;
+	UPROPERTY(EditDefaultsOnly, Category = "Ability|Condition")
+	FGameplayTag Ability_Condition_Offensive_Crouch_Attack_NormalAttack_Combo2;
+	UPROPERTY(EditDefaultsOnly, Category = "Ability|Condition")
+	FGameplayTag Ability_Condition_Offensive_Crouch_Attack_NormalAttack_Combo3;
+	UPROPERTY(EditDefaultsOnly, Category = "Ability|Condition")
+	FGameplayTag Ability_Condition_Offensive_Crouch_Attack_NormalAttack_Combo4;
+	UPROPERTY(EditDefaultsOnly, Category = "Ability|Condition")
+	FGameplayTag Ability_Condition_Offensive_Crouch_Attack_HeavyAttack_Combo1;
+	UPROPERTY(EditDefaultsOnly, Category = "Ability|Condition")
+	FGameplayTag Ability_Condition_Offensive_Crouch_Skill_Dash;
+	UPROPERTY(EditDefaultsOnly, Category = "Ability|Condition")
 	FGameplayTag Ability_Condition_Offensive_Crouch_Roll;
-	
 
 	// ==========================================
-	// Block - 输入屏蔽标签
+	// Block
 	// ==========================================
+	UPROPERTY(EditDefaultsOnly, Category = "Block")
 	FGameplayTag Block_InputAction_Move;
+	UPROPERTY(EditDefaultsOnly, Category = "Block")
 	FGameplayTag Block_InputAction_Look;
+	UPROPERTY(EditDefaultsOnly, Category = "Block")
 	FGameplayTag Block_InputAction_SpringArm;
+	UPROPERTY(EditDefaultsOnly, Category = "Block")
 	FGameplayTag Block_InputAction_Ability;
+	UPROPERTY(EditDefaultsOnly, Category = "Block")
 	FGameplayTag Block_InputAction_Jump;
-
-	// Block - 技能互斥屏蔽（每个Ability对应一个Block Tag）
+	UPROPERTY(EditDefaultsOnly, Category = "Block")
 	FGameplayTag Block_InputAction_Ability_Offensive_Crouch_NormalAttack_Combo1;
+	UPROPERTY(EditDefaultsOnly, Category = "Block")
 	FGameplayTag Block_InputAction_Ability_Offensive_Crouch_NormalAttack_Combo2;
+	UPROPERTY(EditDefaultsOnly, Category = "Block")
 	FGameplayTag Block_InputAction_Ability_Offensive_Crouch_NormalAttack_Combo3;
+	UPROPERTY(EditDefaultsOnly, Category = "Block")
 	FGameplayTag Block_InputAction_Ability_Offensive_Crouch_NormalAttack_Combo4;
+	UPROPERTY(EditDefaultsOnly, Category = "Block")
 	FGameplayTag Block_InputAction_Ability_Offensive_Crouch_Skill_Dash;
+	UPROPERTY(EditDefaultsOnly, Category = "Block")
 	FGameplayTag Block_InputAction_Ability_Offensive_Crouch_HeavyAttack_Combo1;
+	UPROPERTY(EditDefaultsOnly, Category = "Block")
 	FGameplayTag Block_InputAction_Ability_Offensive_Crouch_Roll;
 
 	// ==========================================
-	//  - 动画标签
+	// 角色
 	// ==========================================
+	UPROPERTY(EditDefaultsOnly, Category = "Character")
+	FGameplayTag Character_Crouch;
+	UPROPERTY(EditDefaultsOnly, Category = "Character")
+	FGameplayTag Character_Wraith;
+	UPROPERTY(EditDefaultsOnly, Category = "Character")
+	FGameplayTag Character_Phase;
+
+	// ==========================================
+	// 库存标签
+	// ==========================================
+	UPROPERTY(EditDefaultsOnly, Category = "Inventory")
+	FGameplayTag Inventory_Material;
+	UPROPERTY(EditDefaultsOnly, Category = "Inventory")
+	FGameplayTag Inventory_Consumable;
+	UPROPERTY(EditDefaultsOnly, Category = "Inventory")
+	FGameplayTag Inventory_Special;
+	UPROPERTY(EditDefaultsOnly, Category = "Inventory")
+	FGameplayTag Inventory_Empty;
+	UPROPERTY(EditDefaultsOnly, Category = "Inventory")
 	FGameplayTag Inventory_Material_Experience_Large;
+	UPROPERTY(EditDefaultsOnly, Category = "Inventory")
 	FGameplayTag Inventory_Material_Experience_Medium;
+	UPROPERTY(EditDefaultsOnly, Category = "Inventory")
 	FGameplayTag Inventory_Material_Experience_Small;
-	
-	// ==========================================
-	// Animation - 动画标签
-	// ==========================================
-	FGameplayTag Animation_ANS_InputWindow;        // 输入窗口（动画通知状态）
-	FGameplayTag Animation_ANS_PreInputWindow;     // 预输入窗口（动画通知状态）
+	UPROPERTY(EditDefaultsOnly, Category = "Inventory")
+	FGameplayTag Inventory_Consumable_Crystal_Health;
+	UPROPERTY(EditDefaultsOnly, Category = "Inventory")
+	FGameplayTag Inventory_Consumable_Crystal_Mana;
+	UPROPERTY(EditDefaultsOnly, Category = "Inventory")
+	FGameplayTag Inventory_Consumable_Potion_Health;
+	UPROPERTY(EditDefaultsOnly, Category = "Inventory")
+	FGameplayTag Inventory_Consumable_Potion_Mana;
 
 	// ==========================================
-	// Event - 动画发送事件标签（用于 AnimNotify → GAS WaitGameplayEvent）
+	// Animation
 	// ==========================================
-	FGameplayTag Event_Crouch_Dash_AddLaunch;        // 蹲下冲刺-蓄力循环结束事件
+	UPROPERTY(EditDefaultsOnly, Category = "Animation")
+	FGameplayTag Animation_ANS_InputWindow;
+	UPROPERTY(EditDefaultsOnly, Category = "Animation")
+	FGameplayTag Animation_ANS_PreInputWindow;
 
 	// ==========================================
-	// UI - 界面标签
+	// Event
 	// ==========================================
+	UPROPERTY(EditDefaultsOnly, Category = "Event")
+	FGameplayTag Event_Crouch_Dash_AddLaunch;
+
+	// ==========================================
+	// UI
+	// ==========================================
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	FGameplayTag UI_Layer_Gameplay;
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	FGameplayTag UI_Layer_Prompt;
-	
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	FGameplayTag UI_Widget_MainAttack;
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	FGameplayTag UI_Widget_Attribute;
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	FGameplayTag UI_Widget_Setting;
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	FGameplayTag UI_Widget_Setting_SettingPanel;
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	FGameplayTag UI_Widget_Inventory;
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	FGameplayTag UI_Widget_Inventory_Selection_Border;
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	FGameplayTag UI_Widget_Inventory_Selection_Character;
 
-	
+
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	FGameplayTag UI_WidgetController_MainAttack;
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	FGameplayTag UI_WidgetController_Attribute;
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	FGameplayTag UI_WidgetController_Setting;
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	FGameplayTag UI_WidgetController_Inventory;
+
 	// ==========================================
-	// UI Action - 每个Common Activatable Widget需要对应的Action
+	// UI Action
 	// ==========================================
+	UPROPERTY(EditDefaultsOnly, Category = "UI|Action")
 	FGameplayTag UI_Action_MainAttack_AddAttributeUI;
+	UPROPERTY(EditDefaultsOnly, Category = "UI|Action")
 	FGameplayTag UI_Action_MainAttack_AddSettingUI;
+	UPROPERTY(EditDefaultsOnly, Category = "UI|Action")
+	FGameplayTag UI_Action_MainAttack_AddInventoryUI;
+	UPROPERTY(EditDefaultsOnly, Category = "UI|Action")
+	FGameplayTag UI_Action_MainAttack_Switch1;
+	UPROPERTY(EditDefaultsOnly, Category = "UI|Action")
+	FGameplayTag UI_Action_MainAttack_Switch2;
+	UPROPERTY(EditDefaultsOnly, Category = "UI|Action")
+	FGameplayTag UI_Action_MainAttack_Switch3;
+	UPROPERTY(EditDefaultsOnly, Category = "UI|Action")
 	FGameplayTag UI_Action_Attribute_RemoveAttributeUI;
+	UPROPERTY(EditDefaultsOnly, Category = "UI|Action")
+	FGameplayTag UI_Action_Setting_RemoveSettingUI;
+	UPROPERTY(EditDefaultsOnly, Category = "UI|Action")
+	FGameplayTag UI_Action_Inventory_RemoveInventoryUI;
+	UPROPERTY(EditDefaultsOnly, Category = "UI|Action")
 	FGameplayTag UI_Action_Confirm;
+	UPROPERTY(EditDefaultsOnly, Category = "UI|Action")
 	FGameplayTag UI_Action_Cancel;
+	UPROPERTY(EditDefaultsOnly, Category = "UI|Action")
 	FGameplayTag UI_Action_PreviousTab;
+	UPROPERTY(EditDefaultsOnly, Category = "UI|Action")
 	FGameplayTag UI_Action_NextTab;
-	
-	// ==========================================
-	// State - 玩家状态标签（比如某个角色升级享有翻倍效果）
-	// ==========================================
 
+	UPROPERTY(EditDefaultsOnly, Category = "UI|Action")
+	FGameplayTag UI_Action_InteractButton_Open;
+	UPROPERTY(EditDefaultsOnly, Category = "UI|Action")
+	FGameplayTag UI_Action_InteractButton_Close;
+	UPROPERTY(EditDefaultsOnly, Category = "UI|Action")
+	FGameplayTag UI_Action_InteractButton_Reduce;
+	UPROPERTY(EditDefaultsOnly, Category = "UI|Action")
+	FGameplayTag UI_Action_InteractButton_Add;
+	UPROPERTY(EditDefaultsOnly, Category = "UI|Action")
+	FGameplayTag UI_Action_InteractButton_Switch;
+	UPROPERTY(EditDefaultsOnly, Category = "UI|Action")
+	FGameplayTag UI_Action_InteractButton_Use;
+	UPROPERTY(EditDefaultsOnly, Category = "UI|Action")
+	FGameplayTag UI_Action_InteractButton_ContinueGame;
+	UPROPERTY(EditDefaultsOnly, Category = "UI|Action")
+	FGameplayTag UI_Action_InteractButton_Mappable;
+	UPROPERTY(EditDefaultsOnly, Category = "UI|Action")
+	FGameplayTag UI_Action_InteractButton_DefaultSetting;
+	UPROPERTY(EditDefaultsOnly, Category = "UI|Action")
+	FGameplayTag UI_Action_InteractButton_SaveSetting;
+	UPROPERTY(EditDefaultsOnly, Category = "UI|Action")
+	FGameplayTag UI_Action_InteractButton_Setting;
+	UPROPERTY(EditDefaultsOnly, Category = "UI|Action")
+	FGameplayTag UI_Action_InteractButton_Switch1;
+	UPROPERTY(EditDefaultsOnly, Category = "UI|Action")
+	FGameplayTag UI_Action_InteractButton_Switch2;
+	UPROPERTY(EditDefaultsOnly, Category = "UI|Action")
+	FGameplayTag UI_Action_InteractButton_Switch3;
+	UPROPERTY(EditDefaultsOnly, Category = "UI|Action")
+	FGameplayTag UI_Action_InteractButton_QuitGame;
+
+	// ==========================================
+	// State
+	// ==========================================
+	UPROPERTY(EditDefaultsOnly, Category = "State")
 	FGameplayTag State_Crouch_XP_Double;
+	UPROPERTY(EditDefaultsOnly, Category = "State")
 	FGameplayTag State_Crouch_XP_Triple;
+	UPROPERTY(EditDefaultsOnly, Category = "State")
 	FGameplayTag State_Wraith_XP_Double;
+	UPROPERTY(EditDefaultsOnly, Category = "State")
 	FGameplayTag State_Wraith_XP_Triple;
-	
+
 	// ==========================================
-	// Attributes - 属性标签
+	// Setting
 	// ==========================================
-	
-	// -------- Primary Attributes --------
+	UPROPERTY(EditDefaultsOnly, Category = "Setting")
+	FGameplayTag Setting_Sound;
+	UPROPERTY(EditDefaultsOnly, Category = "Setting")
+	FGameplayTag Setting_MappableKey;
+	UPROPERTY(EditDefaultsOnly, Category = "Setting")
+	FGameplayTag Setting_Interface;
+
+	// ==========================================
+	// Mappable
+	// ==========================================
+	UPROPERTY(EditDefaultsOnly, Category = "Mappable")
+	FGameplayTag Mappable_Attribute_CloseAttributeUI;
+	UPROPERTY(EditDefaultsOnly, Category = "Mappable")
+	FGameplayTag Mappable_Attribute_OpenAttributeUI;
+	UPROPERTY(EditDefaultsOnly, Category = "Mappable")
+	FGameplayTag Mappable_Inventory_CloseInventoryUI;
+	UPROPERTY(EditDefaultsOnly, Category = "Mappable")
+	FGameplayTag Mappable_Inventory_OpenInventoryUI;
+	UPROPERTY(EditDefaultsOnly, Category = "Mappable")
+	FGameplayTag Mappable_Setting_CloseSettingUI;
+	UPROPERTY(EditDefaultsOnly, Category = "Mappable")
+	FGameplayTag Mappable_Setting_OpenSettingUI;
+	UPROPERTY(EditDefaultsOnly, Category = "Mappable")
+	FGameplayTag Mappable_Switch1;
+	UPROPERTY(EditDefaultsOnly, Category = "Mappable")
+	FGameplayTag Mappable_Switch2;
+	UPROPERTY(EditDefaultsOnly, Category = "Mappable")
+	FGameplayTag Mappable_Switch3;
+	UPROPERTY(EditDefaultsOnly, Category = "Mappable")
+	FGameplayTag Mappable_Attack;
+	UPROPERTY(EditDefaultsOnly, Category = "Mappable")
+	FGameplayTag Mappable_Roll;
+	UPROPERTY(EditDefaultsOnly, Category = "Mappable")
+	FGameplayTag Mappable_Skill;
+	UPROPERTY(EditDefaultsOnly, Category = "Mappable")
+	FGameplayTag Mappable_Jump;
+	UPROPERTY(EditDefaultsOnly, Category = "Mappable")
+	FGameplayTag Mappable_MoveForward;
+	UPROPERTY(EditDefaultsOnly, Category = "Mappable")
+	FGameplayTag Mappable_MoveBackward;
+	UPROPERTY(EditDefaultsOnly, Category = "Mappable")
+	FGameplayTag Mappable_MoveLeft;
+	UPROPERTY(EditDefaultsOnly, Category = "Mappable")
+	FGameplayTag Mappable_MoveRight;
+
+	// ==========================================
+	// MappableGroup
+	// ==========================================
+	UPROPERTY(EditDefaultsOnly, Category = "MappableGroup")
+	FGameplayTag MappableGroup_Default;
+	UPROPERTY(EditDefaultsOnly, Category = "MappableGroup")
+	FGameplayTag MappableGroup_Primary;
+	UPROPERTY(EditDefaultsOnly, Category = "MappableGroup")
+	FGameplayTag MappableGroup_Skill_Crouch;
+	UPROPERTY(EditDefaultsOnly, Category = "MappableGroup")
+	FGameplayTag MappableGroup_UI_Attribute;
+	UPROPERTY(EditDefaultsOnly, Category = "MappableGroup")
+	FGameplayTag MappableGroup_UI_Inventory;
+	UPROPERTY(EditDefaultsOnly, Category = "MappableGroup")
+	FGameplayTag MappableGroup_UI_MainAttack;
+	UPROPERTY(EditDefaultsOnly, Category = "MappableGroup")
+	FGameplayTag MappableGroup_UI_Setting;
+	UPROPERTY(EditDefaultsOnly, Category = "MappableGroup")
+	FGameplayTag MappableGroup_UI_CommonUI;
+	UPROPERTY(EditDefaultsOnly, Category = "MappableGroup")
+	FGameplayTag MappableGroup_UI_CommonButton;
+
+	// ==========================================
+	// Attributes
+	// ==========================================
+	UPROPERTY(EditDefaultsOnly, Category = "Attributes|Primary")
 	FGameplayTag Attribute_Primary_Health;
+	UPROPERTY(EditDefaultsOnly, Category = "Attributes|Primary")
 	FGameplayTag Attribute_Primary_Mana;
+	UPROPERTY(EditDefaultsOnly, Category = "Attributes|Primary")
 	FGameplayTag Attribute_Primary_MaxHealth;
+	UPROPERTY(EditDefaultsOnly, Category = "Attributes|Primary")
 	FGameplayTag Attribute_Primary_MaxMana;
+	UPROPERTY(EditDefaultsOnly, Category = "Attributes|Primary")
 	FGameplayTag Attribute_Primary_Level;
+	UPROPERTY(EditDefaultsOnly, Category = "Attributes|Primary")
 	FGameplayTag Attribute_Primary_XP;
 
-	
-	// -------- Secondary Attributes --------
+	UPROPERTY(EditDefaultsOnly, Category = "Attributes|Secondary")
 	FGameplayTag Attribute_Secondary_AttackPower;
+	UPROPERTY(EditDefaultsOnly, Category = "Attributes|Secondary")
 	FGameplayTag Attribute_Secondary_Defense;
+	UPROPERTY(EditDefaultsOnly, Category = "UPROPERTY")
 	FGameplayTag Attribute_Secondary_DamageBonus;
+	UPROPERTY(EditDefaultsOnly, Category = "Attributes|Secondary")
 	FGameplayTag Attribute_Secondary_DamageResilience;
+	UPROPERTY(EditDefaultsOnly, Category = "Attributes|Secondary")
 	FGameplayTag Attribute_Secondary_CriticalHitChance;
+	UPROPERTY(EditDefaultsOnly, Category = "Attributes|Secondary")
 	FGameplayTag Attribute_Secondary_CriticalHitDamage;
+	UPROPERTY(EditDefaultsOnly, Category = "Attributes|Secondary")
 	FGameplayTag Attribute_Secondary_DamagePenetration;
 
-	// -------- Meta Attributes -------------
+	UPROPERTY(EditDefaultsOnly, Category = "Attributes|Meta")
 	FGameplayTag Attribute_Meta_IncomingDamage;
+	UPROPERTY(EditDefaultsOnly, Category = "Attributes|Meta")
 	FGameplayTag Attribute_Meta_IncomingXP;
 
 	// ==========================================
-	// SetByCaller 数据标签（统一 Caller. 前缀）
+	// SetByCaller
 	// ==========================================
-	FGameplayTag Caller_Attribute_Primary_Level;  // 等级（SetByCaller 传入 GE）
-	FGameplayTag Caller_DamageMultiplier;          // 伤害倍率
-	FGameplayTag Caller_Debuff_Stun;               // 眩晕 Debuff
-	FGameplayTag Caller_Debuff_Data_Chance;        // Debuff 触发概率
-	FGameplayTag Caller_Debuff_Data_Damage;        // Debuff 伤害
-	FGameplayTag Caller_Debuff_Data_Frequency;     // Debuff 频率/间隔
-	FGameplayTag Caller_Debuff_Data_Duration;      // Debuff 持续时间
+	UPROPERTY(EditDefaultsOnly, Category = "Caller")
+	FGameplayTag Caller_Attribute_Primary_Level;
+	UPROPERTY(EditDefaultsOnly, Category = "Caller")
+	FGameplayTag Caller_DamageMultiplier;
+	UPROPERTY(EditDefaultsOnly, Category = "Caller")
+	FGameplayTag Caller_Debuff_Stun;
+	UPROPERTY(EditDefaultsOnly, Category = "Caller")
+	FGameplayTag Caller_Debuff_Data_Chance;
+	UPROPERTY(EditDefaultsOnly, Category = "Caller")
+	FGameplayTag Caller_Debuff_Data_Damage;
+	UPROPERTY(EditDefaultsOnly, Category = "Caller")
+	FGameplayTag Caller_Debuff_Data_Frequency;
+	UPROPERTY(EditDefaultsOnly, Category = "Caller")
+	FGameplayTag Caller_Debuff_Data_Duration;
 
 	// ==========================================
 	// TagToAttribute Map - AttributeTag ↔ FGameplayAttribute 一一映射
@@ -267,7 +542,9 @@ public:
 
 	/** 初始化 TagToAttribute 映射（在 InitGameplayTags 末尾调用） */
 	static void InitTagToAttributeMap();
+	
 
+	
 private:
 	static FProjectGameplayTag GameplayTags;
 };

@@ -7,7 +7,7 @@
 --
 
 ---@type WBP_CharacterList_C
-local M = UnLua.Class()
+local M = UnLua.Class(WidgetClassMap.CommonWidgetClass)
 
 function M:Initialize()
     ---@type BP_AttributeUIWidgetController_C

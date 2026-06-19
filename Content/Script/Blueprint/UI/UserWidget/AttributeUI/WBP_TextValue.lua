@@ -7,7 +7,7 @@
 --
 
 ---@type WBP_TextValue_C
-local M = UnLua.Class()
+local M = UnLua.Class(WidgetClassMap.CommonWidgetClass)
 
 
 
@@ -20,6 +20,7 @@ end
 
 function M:AfterSetWidgetController()
     self.AttributeWidgetController=self:GetWidgetController()
+    self.AttributeWidgetController.OnAttributeChangeSignature:Remove(self,self.OnAttributeChangeSignatureFunction)
     self.AttributeWidgetController.OnAttributeChangeSignature:Add(self,self.OnAttributeChangeSignatureFunction)
 
 end

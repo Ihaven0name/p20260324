@@ -22,13 +22,17 @@ class P20260324_API AProjectPlayerCharacter : public AProjectBaseCharacter , pub
 public:
 	
 	AProjectPlayerCharacter();
-	
+
+	//Self
+	virtual void InitAbilityActorInfo() override;
 protected:
 	//Self
 	virtual void BeginPlay() override;
 	virtual void PossessedBy(AController* NewController) override;
+	virtual void NotifyControllerChanged() override;
 	virtual void OnRep_Controller() override;
-	virtual void InitAbilityActorInfo() override;
+	
+	virtual void OnRep_PlayerState() override;
 
 	
 	//IPlayerInterface
@@ -70,7 +74,4 @@ public:
 	AProjectPlayerController* GetProjectPlayerController();
 	UFUNCTION(BlueprintCallable,BlueprintPure)
 	AProjectPlayerState* GetProjectPlayerState();
-	
-	UFUNCTION(BlueprintCallable)
-	void CalculateCurrentLevel(int32 TempXP,int& OutLevel,int& OutXP);
 };

@@ -2,9 +2,11 @@
 
 #include "CoreMinimal.h"
 #include "GameplayTagContainer.h"
+#include "Player/ProjectPlayerController.h"
 #include "Subsystems/GameInstanceSubsystem.h"
-#include "UI/Widget/ProjectCommonUserWidget.h"
+#include "UI/Widget/ProjectCommonActivatableWidget.h"
 #include "UI/Widget/ProjectUserWidget.h"
+#include "UI/WidgetController/InventoryUIWidgetController.h"
 #include "UIManager.generated.h"
 
 class UCommonActivatableWidgetStack;
@@ -21,7 +23,7 @@ struct FUITagAndUserWidget
 	UPROPERTY(BlueprintReadWrite)
 	FGameplayTag UITag;
 	UPROPERTY(BLueprintReadWrite)
-	TObjectPtr<UProjectCommonUserWidget> UserWidget;
+	TObjectPtr<UProjectCommonActivatableWidget> UserWidget;
 };
 
 
@@ -32,29 +34,34 @@ class P20260324_API UUIManager : public ULocalPlayerSubsystem
 public:
 	UFUNCTION(BlueprintCallable)
 	void AddMainUI();
+	
 	UFUNCTION(BlueprintCallable, Category = "UIManager|WidgetController")
-	UMainAttackUIWidgetController* GetMainAttackUIWidgetController(const FWidgetControllerParam& Params);
+	UMainAttackUIWidgetController* GetMainAttackUIWidgetController(AProjectPlayerController* PlayerController);
 	UFUNCTION(BlueprintCallable, Category = "UIManager|WidgetController")
-	USettingUIWidgetController* GetSettingUIWidgetController(const FWidgetControllerParam& Params);
+	USettingUIWidgetController* GetSettingUIWidgetController(AProjectPlayerController* PlayerController);
 	UFUNCTION(BlueprintCallable, Category = "UIManager|WidgetController")
-	UAttributeWidgetController* GetAttributeWidgetController(const FWidgetControllerParam& Params);
+	UInventoryUIWidgetController* GetInventoryUIWidgetController(AProjectPlayerController* PlayerController);
 	UFUNCTION(BlueprintCallable, Category = "UIManager|WidgetController")
-	UProjectWidgetController* GetWidgetControllerByWidgetTag(const FWidgetControllerParam& Params,const FGameplayTag WidgetTag);
+	UAttributeWidgetController* GetAttributeWidgetController(AProjectPlayerController* PlayerController);
+	UFUNCTION(BlueprintCallable, Category = "UIManager|WidgetController")
+	UProjectBaseWidgetController* GetWidgetControllerByWidgetTag(const FGameplayTag WidgetTag, AProjectPlayerController* PlayerController);
 
+	
 	UFUNCTION(BlueprintCallable, Category = "UIManager|Stack")
 	UCommonActivatableWidgetStack* GetCommonStackByStackLayerTag(const FGameplayTag StackLayerTag);
 	UFUNCTION(BlueprintCallable, Category = "UIManager|Stack")
 	UCommonActivatableWidget* PushWidget(const FGameplayTag WidgetTag);
 	UFUNCTION(BlueprintCallable, Category = "UIManager|Stack")
 	void PopWidget(const FGameplayTag WidgetTag);
+	UFUNCTION(BlueprintCallable)
+	AProjectPlayerController* GetPlayerController() const;
 
-	
-	template<typename T>
-	T* GetOrCreateWidgetController(const FGameplayTag WidgetTag, const FWidgetControllerParam& Params);
+	template <typename T>
+	T* GetOrCreateWidgetController(const FGameplayTag WidgetTag, AProjectPlayerController* PlayerController);
 	
 private:
 	UPROPERTY()
 	TWeakObjectPtr<UProjectMainUIUserWidget> MainUIWidget;
 	UPROPERTY()
-	TMap<FGameplayTag,UProjectWidgetController*> UITagToWidgetController;
+	TMap<FGameplayTag,UProjectBaseWidgetController*> ControllerTagToWidgetController;
 };

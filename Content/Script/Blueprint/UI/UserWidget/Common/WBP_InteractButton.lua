@@ -6,7 +6,7 @@
 -- @DATE ${date} ${time}
 --
 
----@type WBP_ButtonSlot_NoPadding_C
+---@type WBP_InteractButton_C
 local M = UnLua.Class()
 
 --function M:Initialize(Initializer)
@@ -20,5 +20,9 @@ local M = UnLua.Class()
 
 --function M:Tick(MyGeometry, InDeltaTime)
 --end
+
+function M:AfterSetWidgetController()
+    
+end
 
 return M

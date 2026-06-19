@@ -6,6 +6,20 @@
 #include "Player/ProjectPlayerCharacter.h"
 #include "ProjectAnimInstance.generated.h"
 
+
+UENUM(BlueprintType)
+enum class EAnimDirection : uint8
+{
+	Forward,
+	Backward,
+	Left,
+	Right
+};
+
+
+
+
+
 /**
  * 仅包含变量的 AnimInstance 基类
  */

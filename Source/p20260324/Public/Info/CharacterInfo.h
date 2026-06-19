@@ -1,12 +1,13 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GameplayTagContainer.h"
 #include "InputTriggers.h"
 #include "Engine/DataAsset.h"
 #include "CharacterInfo.generated.h"
 
+class AProjectPlayerCharacter;
 class UInputMappingContext;
-struct FGameplayTag;
 class UGameplayEffect;
 class UGameplayAbility;
 
@@ -112,6 +113,9 @@ public:
 	/** 所有 Player Category 共享的通用非输入性被动技能（Passive） */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	TArray<TSubclassOf<UGameplayAbility>> CommonPlayerStartupAbilities_Passive;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	TMap<FGameplayTag,TSubclassOf<AProjectPlayerCharacter>> CharacterTagToCharacterClass;
 	
 	UFUNCTION(BlueprintCallable, Category = "Character Info")
 	bool FindSpecialPlayerInfoByCategory(EPlayerCategory PlayerCategory, FSpecialPlayerInfo& OutPlayerInfo) const;
@@ -123,8 +127,10 @@ public:
 	/** 获取 Player 通用被动技能 */
 	UFUNCTION(BlueprintCallable, Category = "Character|Player|Ability")
 	const TArray<TSubclassOf<UGameplayAbility>>& GetCommonPlayerStartupAbilities_Passive() const { return CommonPlayerStartupAbilities_Passive; }
-
-
+	
+	UFUNCTION(BlueprintCallable, Category = "Character Info")
+	bool FindCharacterClassByTag(const FGameplayTag& CharacterTag, TSubclassOf<AProjectPlayerCharacter>& OutCharacterClass) const;
+	
 	// ==========================================
 	// Enemy 相关数据
 	// ==========================================

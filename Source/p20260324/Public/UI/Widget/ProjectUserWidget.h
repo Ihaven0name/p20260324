@@ -4,7 +4,7 @@
 #include "Blueprint/UserWidget.h"
 #include "ProjectUserWidget.generated.h"
 
-class UProjectWidgetController;
+class UProjectBaseWidgetController;
 
 UCLASS()
 class P20260324_API UProjectUserWidget : public UUserWidget

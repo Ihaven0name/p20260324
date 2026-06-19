@@ -7,7 +7,7 @@
 --
 
 ---@type WBP_XPBar_C
-local M = UnLua.Class()
+local M = UnLua.Class(WidgetClassMap.CommonWidgetClass)
 
 function M:Initialize(Initializer)
     ---@type BP_AttributeUIWidgetController_C
@@ -20,8 +20,10 @@ end
 
 function M:AfterSetWidgetController()
     self.AttributeWidgetController=self:GetWidgetController()
-    self.CurrentLevel=self.AttributeWidgetController.AttributeSet:GetLevelValueForLua()
+    self.CurrentLevel=self.AttributeWidgetController.WidgetControllerParam.AttributeSet:GetLevelValueForLua()
+    self.AttributeWidgetController.OnAttributeChangeSignature:Remove(self,self.OnAttributeChangeFunction)
     self.AttributeWidgetController.OnAttributeChangeSignature:Add(self,self.OnAttributeChangeFunction)
+    self.AttributeWidgetController.OnTemporaryLevelAndXPChangeSignature:Remove(self,self.OnTemporaryLevelAndXPChangeFunction)
     self.AttributeWidgetController.OnTemporaryLevelAndXPChangeSignature:Add(self,self.OnTemporaryLevelAndXPChangeFunction)
     
 end
@@ -49,7 +51,7 @@ function M:OnAttributeChangeFunction(AttributeInfo)
     if self.AttributeTag==AttributeInfo.AttributeTag then
         ---@type UConfigManager
         local ConfigManager=UE.UProjectBlueprintFunctionLibrary.GetConfigManager(self.AttributeWidgetController.PlayerController);
-        self.CurrentLevel=self.AttributeWidgetController.AttributeSet:GetLevelValueForLua()
+        self.CurrentLevel=self.AttributeWidgetController.WidgetControllerParam.AttributeSet:GetLevelValueForLua()
         local NeedXP=ConfigManager:GetNeedXPAtLevel(math.tointeger(self.CurrentLevel))
         if not (NeedXP == 0) then
             local Percent=AttributeInfo.AttributeValue/NeedXP

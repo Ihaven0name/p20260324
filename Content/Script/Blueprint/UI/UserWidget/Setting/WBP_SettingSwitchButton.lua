@@ -6,7 +6,7 @@
 -- @DATE ${date} ${time}
 --
 
----@type WBP_ButtonSlot_Padding_C
+---@type WBP_SettingSwitchButton_C
 local M = UnLua.Class()
 
 --function M:Initialize(Initializer)
@@ -21,7 +21,4 @@ local M = UnLua.Class()
 --function M:Tick(MyGeometry, InDeltaTime)
 --end
 
-function M:AfterNativeOnActivated()
-    
-end
 return M

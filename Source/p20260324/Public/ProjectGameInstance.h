@@ -8,12 +8,21 @@
 class UAbilityInfo;
 class UCharacterInfo;
 
+UENUM(BlueprintType)
+enum class EProjectSaveSlotName : uint8
+{
+	MappableKey UMETA(DisplayName = "Mappable Key")
+};
+
 UCLASS()
 class P20260324_API UProjectGameInstance : public UGameInstance
 {
 	GENERATED_BODY()
 public:
 	virtual void Init() override;
+
+	UFUNCTION(BlueprintPure, Category="Save")
+	static FString GetSaveSlotName(EProjectSaveSlotName InSaveSlotName);
 	
 	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category="Mouse")
 	float MouseAxisXSensitivityScale=0.5f;

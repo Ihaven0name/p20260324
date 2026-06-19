@@ -3,24 +3,45 @@
 
 #include "Manager/InventoryManager.h"
 
+#include "GAS/ProjectBlueprintFunctionLibrary.h"
+#include "GAS/ProjectGameplayTag.h"
+#include "Info/InventoryItemInfo.h"
+#include "Manager/ConfigManager.h"
 #include "p20260324/LogChannel.h"
+#include "UI/Item/ProjectInventoryItem.h"
+
+
+
+
 
 bool UInventoryManager::AddItem(const FGameplayTag ItemTag, int32 Count)
 {
 	//TODO:需要修改，没必要if 
 	if (!ItemTag.IsValid() || Count <= 0) return false;
-	int32 TempQuantity;
 	if (int32* ItemAmountPtr = ItemTagToQuantity.Find(ItemTag))
 	{
-		*ItemAmountPtr += Count;
-		TempQuantity=*ItemAmountPtr;
+		const int32 TempQuantity = *ItemAmountPtr+Count;
+		UInventoryItemInfo* TempInventoryItemInfo;
+		if (GetInventoryInfo()->FindInventoryItemInfoByItemTag(ItemTag,TempInventoryItemInfo))
+		{
+			if (TempInventoryItemInfo->MaxStackNumber<TempQuantity)
+			{
+				*ItemAmountPtr=TempInventoryItemInfo->MaxStackNumber;
+				OnInventorySingleChanged.Broadcast(ItemTag, TempInventoryItemInfo->MaxStackNumber);
+				UE_LOG(LogProject,Warning,TEXT("东西超过上限，无法获得更多"))
+				return false;
+			}
+			*ItemAmountPtr=TempQuantity;
+			OnInventorySingleChanged.Broadcast(ItemTag, TempQuantity);
+		}
 	}
 	else
 	{
-		ItemTagToQuantity.FindOrAdd(ItemTag) += Count;
-		TempQuantity=Count;
+		ItemTagToQuantity.Add(ItemTag) += Count;
+		OnInventorySingleChanged.Broadcast(ItemTag, Count);
+		OnInventoryMultiChanged.Broadcast();
 	}
-	OnInventoryChanged.Broadcast(ItemTag, TempQuantity);
+	
 	return true;
 }
 
@@ -36,12 +57,18 @@ bool UInventoryManager::RemoveItem(const FGameplayTag ItemTag, int32 Count)
 			return false;
 		}
 		*ItemQuantityPtr -= Count;
-		const int32 TempQuantity = *ItemQuantityPtr;
+		
 		if (*ItemQuantityPtr <= 0)
 		{
 			ItemTagToQuantity.Remove(ItemTag);
+			OnInventorySingleChanged.Broadcast(ItemTag, 0);
+			OnInventoryMultiChanged.Broadcast();
 		}
-		OnInventoryChanged.Broadcast(ItemTag, TempQuantity);
+		else
+		{
+			const int32 TempQuantity = *ItemQuantityPtr;
+			OnInventorySingleChanged.Broadcast(ItemTag, TempQuantity);
+		}
 		return true;
 	}
 	return false;
@@ -55,4 +82,39 @@ int32 UInventoryManager::GetItemQuantity(const FGameplayTag ItemTag) const
 	}
 	UE_LOG(LogProject,Warning,TEXT("没有这个Inventory 标签"));
 	return 0;
+}
+
+void UInventoryManager::GetFilterItems(const FGameplayTag ItemTypeTag, TArray<UProjectInventoryItem*>& FilterItemsInfo)
+{
+	if (ItemTypeTag.MatchesTagExact(FProjectGameplayTag::Get().Inventory_Empty)) return;
+	FilterItemsInfo.Empty();
+	for (const auto [ItemTag,ItemQuantity] : ItemTagToQuantity)
+	{
+		if (ItemTag.MatchesTag(ItemTypeTag))
+		{
+			UProjectInventoryItem* TempProjectInventoryItem=NewObject<UProjectInventoryItem>(this);
+			UInventoryItemInfo* TempInventoryItemInfo=nullptr;
+			if (GetInventoryInfo()->FindInventoryItemInfoByItemTag(ItemTag,TempInventoryItemInfo))
+			{
+				TempProjectInventoryItem->ItemTag=ItemTag;
+				TempProjectInventoryItem->InventoryItemInfo=TempInventoryItemInfo;
+				TempProjectInventoryItem->OwnedNumber=ItemQuantity;
+				FilterItemsInfo.Add(TempProjectInventoryItem);
+			}
+		}
+	}
+}
+
+const TMap<FGameplayTag, int32>& UInventoryManager::GetItemQuantityMap() const
+{
+	return ItemTagToQuantity;
+}
+
+UInventoryInfo* UInventoryManager::GetInventoryInfo()
+{
+	if (InventoryInfo == nullptr)
+	{
+		InventoryInfo=GetGameInstance()->GetSubsystem<UConfigManager>()->GetInventoryInfo();
+	}
+	return InventoryInfo;
 }

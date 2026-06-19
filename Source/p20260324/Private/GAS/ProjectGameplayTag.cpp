@@ -1,6 +1,8 @@
 #include "GAS/ProjectGameplayTag.h"
 #include "GameplayTagsManager.h"
+#include "UnLuaEx.h"
 #include "GAS/ProjectAttributeSet.h"
+#include "GAS/ProjectBlueprintFunctionLibrary.h"
 
 FProjectGameplayTag FProjectGameplayTag::GameplayTags;
 TMap<FGameplayTag, FGameplayAttribute> FProjectGameplayTag::TagToAttributeMap;
@@ -169,13 +171,34 @@ void FProjectGameplayTag::InitGameplayTags()
 	GameplayTags.Block_InputAction_Ability_Offensive_Crouch_HeavyAttack_Combo1 = AddTag(Manager, "Block.InputAction.Ability.Offensive.Crouch.HeavyAttack.Combo1", "屏蔽重攻击连段1");
 	GameplayTags.Block_InputAction_Ability_Offensive_Crouch_Roll = AddTag(Manager, "Block.InputAction.Ability.Offensive.Crouch.Roll", "屏蔽翻滚");
 
+
+	// ==========================================
+	//  - 角色
+	// ==========================================
+	GameplayTags.Character_Crouch = AddTag(Manager, "Character.Crouch", "Character Crouch");
+	GameplayTags.Character_Wraith = AddTag(Manager, "Character.Wraith", "Character Wraith");
+	GameplayTags.Character_Phase = AddTag(Manager, "Character.Phase", "Character Phase");
+
+	
 	// ==========================================
 	//  - 动画标签
 	// ==========================================
+	
+	GameplayTags.Inventory_Material = AddTag(Manager, "Inventory.Material", "素材");
+	GameplayTags.Inventory_Consumable = AddTag(Manager, "Inventory.Consumable", "消耗品");
+	GameplayTags.Inventory_Special = AddTag(Manager, "Inventory.Special", "特殊道具");
+	
+
+	
+	GameplayTags.Inventory_Empty = AddTag(Manager, "Inventory.Empty", "空格子");
 	GameplayTags.Inventory_Material_Experience_Large = AddTag(Manager, "Inventory.Material.Experience.Large", "Large Experience Material");
 	GameplayTags.Inventory_Material_Experience_Medium = AddTag(Manager, "Inventory.Material.Experience.Medium", "Medium Experience Material");
 	GameplayTags.Inventory_Material_Experience_Small = AddTag(Manager, "Inventory.Material.Experience.Small", "Small Experience Material");
-	
+
+	GameplayTags.Inventory_Consumable_Crystal_Health = AddTag(Manager, "Inventory.Consumable.Crystal.Health", "Crystal that restores Health");
+	GameplayTags.Inventory_Consumable_Crystal_Mana = AddTag(Manager, "Inventory.Consumable.Crystal.Mana", "Crystal that restores Mana");
+	GameplayTags.Inventory_Consumable_Potion_Health = AddTag(Manager, "Inventory.Consumable.Potion.Health", "Potion that restores Health");
+	GameplayTags.Inventory_Consumable_Potion_Mana = AddTag(Manager, "Inventory.Consumable.Potion.Mana", "Potion that restores Mana");
 	// ==========================================
 	// Animation - 动画标签
 	// ==========================================
@@ -198,19 +221,51 @@ void FProjectGameplayTag::InitGameplayTags()
 	GameplayTags.UI_Widget_MainAttack = AddTag(Manager, "UI.Widget.MainAttack", "Main Attack Widget");
 	GameplayTags.UI_Widget_Attribute = AddTag(Manager, "UI.Widget.Attribute", "Attribute Widget");
 	GameplayTags.UI_Widget_Setting = AddTag(Manager, "UI.Widget.Setting", "Setting Widget");
+	GameplayTags.UI_Widget_Setting_SettingPanel = AddTag(Manager, "UI.Widget.Setting.SettingPanel", "Setting Panel Widget");
+	GameplayTags.UI_Widget_Inventory = AddTag(Manager, "UI.Widget.Inventory", "Inventory Widget");
+	// --- Inventory Selection Widgets ---
+	GameplayTags.UI_Widget_Inventory_Selection_Border = AddTag(Manager, "UI.Widget.Inventory.Selection.Border", "Inventory Selection Border Widget");
+	GameplayTags.UI_Widget_Inventory_Selection_Character = AddTag(Manager, "UI.Widget.Inventory.Selection.Character", "Inventory Character Selection Widget");
 
+	GameplayTags.UI_WidgetController_MainAttack = AddTag(Manager, "UI.WidgetController.MainAttack", "Widget controller for MainAttack");
+	GameplayTags.UI_WidgetController_Attribute = AddTag(Manager, "UI.WidgetController.Attribute", "Widget controller for Attribute");
+	GameplayTags.UI_WidgetController_Setting = AddTag(Manager, "UI.WidgetController.Setting", "Widget controller for Setting");
+	GameplayTags.UI_WidgetController_Inventory = AddTag(Manager, "UI.WidgetController.Inventory", "Widget controller for Inventory");
 
+	
 	// ==========================================
 	// UI Action - 每个Common Activatable Widget需要对应的Action
 	// ==========================================
 	GameplayTags.UI_Action_MainAttack_AddAttributeUI = AddTag(Manager, "UI.Action.MainAttack.AddAttributeUI", "Add Attribute UI");
 	GameplayTags.UI_Action_MainAttack_AddSettingUI = AddTag(Manager, "UI.Action.MainAttack.AddSettingUI", "Add Setting UI");
+	GameplayTags.UI_Action_MainAttack_AddInventoryUI = AddTag(Manager, "UI.Action.MainAttack.AddInventoryUI", "Add Inventory UI");
+	// --- Main Attack Character Switching ---
+	GameplayTags.UI_Action_MainAttack_Switch1 = AddTag(Manager, "UI.Action.MainAttack.Switch1", "Switch to Team Member 1");
+	GameplayTags.UI_Action_MainAttack_Switch2 = AddTag(Manager, "UI.Action.MainAttack.Switch2", "Switch to Team Member 2");
+	GameplayTags.UI_Action_MainAttack_Switch3 = AddTag(Manager, "UI.Action.MainAttack.Switch3", "Switch to Team Member 3");
 	GameplayTags.UI_Action_Attribute_RemoveAttributeUI = AddTag(Manager, "UI.Action.Attribute.RemoveAttributeUI", "Close Attribute UI");
+	GameplayTags.UI_Action_Setting_RemoveSettingUI = AddTag(Manager, "UI.Action.Setting.RemoveSettingUI", "Close Setting UI");
+	GameplayTags.UI_Action_Inventory_RemoveInventoryUI = AddTag(Manager, "UI.Action.Inventory.RemoveInventoryUI", "Close Inventory UI");
 	GameplayTags.UI_Action_Confirm = AddTag(Manager, "UI.Action.Confirm", "CommonUI Confirm Action");
 	GameplayTags.UI_Action_Cancel = AddTag(Manager, "UI.Action.Cancel", "CommonUI Cancel/Back Action");
 	GameplayTags.UI_Action_PreviousTab = AddTag(Manager, "UI.Action.PreviousTab", "CommonUI Previous Tab Action");
 	GameplayTags.UI_Action_NextTab = AddTag(Manager, "UI.Action.NextTab", "CommonUI Next Tab Action");
 
+	GameplayTags.UI_Action_InteractButton_Open = AddTag(Manager, "UI.Action.InteractButton.Open", "Open interact button");
+	GameplayTags.UI_Action_InteractButton_Close = AddTag(Manager, "UI.Action.InteractButton.Close", "Close interact button");
+	GameplayTags.UI_Action_InteractButton_Reduce = AddTag(Manager, "UI.Action.InteractButton.Reduce", "Reduce interact button");
+	GameplayTags.UI_Action_InteractButton_Add = AddTag(Manager, "UI.Action.InteractButton.Add", "Add interact button");
+	GameplayTags.UI_Action_InteractButton_Switch = AddTag(Manager, "UI.Action.InteractButton.Switch", "Switch interact button");
+	GameplayTags.UI_Action_InteractButton_Use = AddTag(Manager, "UI.Action.InteractButton.Use", "Use interact button");
+	GameplayTags.UI_Action_InteractButton_ContinueGame = AddTag(Manager, "UI.Action.InteractButton.ContinueGame", "Continue game interact button");
+	GameplayTags.UI_Action_InteractButton_Mappable = AddTag(Manager, "UI.Action.InteractButton.Mappable", "Open mappable interact button");
+	GameplayTags.UI_Action_InteractButton_DefaultSetting = AddTag(Manager, "UI.Action.InteractButton.DefaultSetting", "Restore default setting interact button");
+	GameplayTags.UI_Action_InteractButton_SaveSetting = AddTag(Manager, "UI.Action.InteractButton.SaveSetting", "Save setting interact button");
+	GameplayTags.UI_Action_InteractButton_Setting = AddTag(Manager, "UI.Action.InteractButton.Setting", "Open setting interact button");
+	GameplayTags.UI_Action_InteractButton_Switch1 = AddTag(Manager, "UI.Action.InteractButton.Switch1", "Switch interact button 1");
+	GameplayTags.UI_Action_InteractButton_Switch2 = AddTag(Manager, "UI.Action.InteractButton.Switch2", "Switch interact button 2");
+	GameplayTags.UI_Action_InteractButton_Switch3 = AddTag(Manager, "UI.Action.InteractButton.Switch3", "Switch interact button 3");
+	GameplayTags.UI_Action_InteractButton_QuitGame = AddTag(Manager, "UI.Action.InteractButton.QuitGame", "Quit game interact button");
 	// ==========================================
 	// State - 玩家状态标签（比如某个角色升级享有翻倍效果）
 	// ==========================================
@@ -219,6 +274,37 @@ void FProjectGameplayTag::InitGameplayTags()
 	GameplayTags.State_Crouch_XP_Triple = AddTag(Manager, "State.Crouch.XP.Triple", "Triple XP multiplier state");
 	GameplayTags.State_Wraith_XP_Double = AddTag(Manager, "State.Wraith.XP.Double", "Wraith character double XP multiplier");
 	GameplayTags.State_Wraith_XP_Triple = AddTag(Manager, "State.Wraith.XP.Triple", "Wraith character triple XP multiplier");
+
+	GameplayTags.Setting_Sound = AddTag(Manager, "Setting.Sound", "Setting sound category");
+	GameplayTags.Setting_MappableKey = AddTag(Manager, "Setting.MappableKey", "Setting mappable key category");
+	GameplayTags.Setting_Interface = AddTag(Manager, "Setting.Interface", "Setting interface category");
+
+	GameplayTags.Mappable_Attribute_CloseAttributeUI = AddTag(Manager, "Mappable.Attribute.CloseAttributeUI", "Mappable close attribute UI");
+	GameplayTags.Mappable_Attribute_OpenAttributeUI = AddTag(Manager, "Mappable.Attribute.OpenAttributeUI", "Mappable open attribute UI");
+	GameplayTags.Mappable_Inventory_CloseInventoryUI = AddTag(Manager, "Mappable.Inventory.CloseInventoryUI", "Mappable close inventory UI");
+	GameplayTags.Mappable_Inventory_OpenInventoryUI = AddTag(Manager, "Mappable.Inventory.OpenInventoryUI", "Mappable open inventory UI");
+	GameplayTags.Mappable_Setting_CloseSettingUI = AddTag(Manager, "Mappable.Setting.CloseSettingUI", "Mappable close setting UI");
+	GameplayTags.Mappable_Setting_OpenSettingUI = AddTag(Manager, "Mappable.Setting.OpenSettingUI", "Mappable open setting UI");
+	GameplayTags.Mappable_Switch1 = AddTag(Manager, "Mappable.Switch1", "Mappable switch main attack slot 1");
+	GameplayTags.Mappable_Switch2 = AddTag(Manager, "Mappable.Switch2", "Mappable switch main attack slot 2");
+	GameplayTags.Mappable_Switch3 = AddTag(Manager, "Mappable.Switch3", "Mappable switch main attack slot 3");
+	GameplayTags.Mappable_Attack = AddTag(Manager, "Mappable.Attack", "Mappable ability attack");
+	GameplayTags.Mappable_Roll = AddTag(Manager, "Mappable.Roll", "Mappable ability roll");
+	GameplayTags.Mappable_Skill = AddTag(Manager, "Mappable.Skill", "Mappable ability skill");
+	GameplayTags.Mappable_Jump = AddTag(Manager, "Mappable.Jump", "Mappable motion jump");
+	GameplayTags.Mappable_MoveForward = AddTag(Manager, "Mappable.MoveForward", "Mappable motion move forward");
+	GameplayTags.Mappable_MoveBackward = AddTag(Manager, "Mappable.MoveBackward", "Mappable motion move backward");
+	GameplayTags.Mappable_MoveLeft = AddTag(Manager, "Mappable.MoveLeft", "Mappable motion move left");
+	GameplayTags.Mappable_MoveRight = AddTag(Manager, "Mappable.MoveRight", "Mappable motion move right");
+	GameplayTags.MappableGroup_Default = AddTag(Manager, "MappableGroup.Default", "Mappable default group");
+	GameplayTags.MappableGroup_Primary = AddTag(Manager, "MappableGroup.Primary", "Mappable primary group");
+	GameplayTags.MappableGroup_Skill_Crouch = AddTag(Manager, "MappableGroup.Skill.Crouch", "Mappable crouch skill group");
+	GameplayTags.MappableGroup_UI_Attribute = AddTag(Manager, "MappableGroup.UI.Attribute", "Mappable attribute UI group");
+	GameplayTags.MappableGroup_UI_Inventory = AddTag(Manager, "MappableGroup.UI.Inventory", "Mappable inventory UI group");
+	GameplayTags.MappableGroup_UI_MainAttack = AddTag(Manager, "MappableGroup.UI.MainAttack", "Mappable main attack UI group");
+	GameplayTags.MappableGroup_UI_Setting = AddTag(Manager, "MappableGroup.UI.Setting", "Mappable setting UI group");
+	GameplayTags.MappableGroup_UI_CommonUI = AddTag(Manager, "MappableGroup.UI.CommonUI", "Mappable common UI group");
+	GameplayTags.MappableGroup_UI_CommonButton = AddTag(Manager, "MappableGroup.UI.CommonButton", "Mappable common button group");
 	// ==========================================
 	// Attributes - 属性标签 (Primary)
 	// ==========================================
@@ -294,3 +380,11 @@ FGameplayAttribute FProjectGameplayTag::GetAttributeByTag(const FGameplayTag InT
 	// 返回无效的空 Attribute
 	return FGameplayAttribute();
 }
+
+
+BEGIN_EXPORT_REFLECTED_CLASS(FProjectGameplayTag)
+	ADD_STATIC_FUNCTION_EX("Get",FProjectGameplayTag&,Get)//导出得到单例类的函数
+	
+END_EXPORT_CLASS()
+IMPLEMENT_EXPORTED_CLASS(FProjectGameplayTag)
+

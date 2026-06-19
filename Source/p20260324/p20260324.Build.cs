@@ -8,9 +8,14 @@ public class p20260324 : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore","GameplayTags","GameplayTasks","GameplayAbilities", "EnhancedInput","Lua","UnLua" ,"LuaFrameWork", "CommonUI","CommonInput" });
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore","GameplayTags","GameplayTasks","GameplayAbilities", "EnhancedInput","Lua","UnLua" ,"LuaFrameWork", "CommonUI","CommonInput","NetCore", "Slate", "SlateCore" });
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
+
+		if (Target.bBuildEditor)
+		{
+			PrivateDependencyModuleNames.AddRange(new string[] { "AssetRegistry", "UnrealEd" });
+		}
 
 		// Uncomment if you are using Slate UI
 		// PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });

@@ -16,10 +16,13 @@
 #include "Info/InputInfo.h"
 #include "Kismet/GameplayStatics.h"
 #include "Manager/EnemyManager.h"
+#include "Manager/InputManager.h"
 #include "Abilities/GameplayAbility.h"
+#include "Components/CapsuleComponent.h"
 #include "GAS/ProjectGameplayTag.h"
 #include "Input/ProjectInputComponent.h"
 #include "Manager/UIManager.h"
+#include "Player/ProjectPlayerState.h"
 #include "UI/HUD/ProjectAttackHUD.h"
 #include "UI/WidgetController/AttributeWidgetController.h"
 
@@ -35,9 +38,17 @@ void AProjectPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
 
-	//TODO：先进行加载默认的IMC，后面添加修改功能之后再说
-	BindInputMappingContext();
+	if (UInputManager* InputManager = GetGameInstance()->GetSubsystem<UInputManager>())
+	{
+		InputManager->InitializeMappableByPlayerController(this);
+		if (AProjectPlayerCharacter* CurrentPlayerCharacter = GetPlayerCharacter())
+		{
+			SwitchCharacterIMC(CurrentPlayerCharacter->PlayerCategory);
+		}
+		InputManager->ActivateMappedInputMappingContextByTag(FProjectGameplayTag::Get().MappableGroup_Primary, 0);
+	}
 	
+	//TODO:在存档实现之后，需要实现存档加载角色小队
 	// FInputModeGameAndUI InputModeData;
 	// InputModeData.SetLockMouseToViewportBehavior(EMouseLockMode::LockAlways);
 	// SetInputMode(InputModeData);
@@ -56,9 +67,6 @@ void AProjectPlayerController::SetupInputComponent()
 	EnhancedInputComponent->BindAction(JumpAction,ETriggerEvent::Started,this,&ThisClass::JumpActionFunction);
 	EnhancedInputComponent->BindAction(LockOnAction,ETriggerEvent::Started,this,&ThisClass::LockOnActionFunction);
 	EnhancedInputComponent->BindAction(LockSwitchAction,ETriggerEvent::Triggered,this,&ThisClass::LockSwitchActionFunction);
-	// EnhancedInputComponent->BindAction(ChangeAttributeUIAction,ETriggerEvent::Started,this,&ThisClass::ChangeAttributeUIActionFunction);
-	// EnhancedInputComponent->BindAction(ChangeSettingUIAction,ETriggerEvent::Started,this,&ThisClass::ChangeSettingUIActionFunction);
-	//
 
 	// 绑定所有角色所有技能输入
 	if (const UInputInfo* InputInfo = UProjectBlueprintFunctionLibrary::GetConfigManager(this)->GetInputInfo())
@@ -144,12 +152,10 @@ UProjectGameInstance* AProjectPlayerController::GetProjectGameInstance()
 	return GameInstance;
 }
 
+//使用的时候可以存储一个临时变量
 AProjectPlayerCharacter* AProjectPlayerController::GetPlayerCharacter()
 {
-	if (PlayerCharacter==nullptr)
-	{
-		PlayerCharacter=Cast<AProjectPlayerCharacter>(GetCharacter());
-	}
+	PlayerCharacter=Cast<AProjectPlayerCharacter>(GetCharacter());
 	return PlayerCharacter;
 }
 
@@ -161,26 +167,6 @@ AProjectAttackHUD* AProjectPlayerController::GetProjectHUD()
 	}
 	return ProjectHUD;
 }
-
-
-void AProjectPlayerController::BindInputMappingContext()
-{
-	if(UEnhancedInputLocalPlayerSubsystem* EnhancedInputSystem=ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
-	{
-		UInputInfo* InputInfo = UProjectBlueprintFunctionLibrary::GetConfigManager(this)->GetInputInfo();
-		if (!InputInfo) return;
-
-		EnhancedInputSystem->AddMappingContext(InputInfo->DefaultProjectAttackInputMappingContext,0);
-		// 记录当前激活的 SpecialIMC
-		FInputSetting* CurrentSetting = InputInfo->PlayerCategoryToInputSetting.Find(GetPlayerCharacter()->PlayerCategory);
-		if (CurrentSetting && CurrentSetting->SpecialProjectInputMappingContext)
-		{
-			ActiveSpecialIMC = CurrentSetting->SpecialProjectInputMappingContext;
-			EnhancedInputSystem->AddMappingContext(ActiveSpecialIMC, 1);
-		}
-	}
-}
-
 
 void AProjectPlayerController::MoveActionFunction(const FInputActionValue& Value)
 {
@@ -330,23 +316,56 @@ void AProjectPlayerController::OnAbilityJudgeReleased(const FGameplayTag JudgeTa
 
 void AProjectPlayerController::SwitchCharacterIMC(EPlayerCategory NewCategory)
 {
-	if (UEnhancedInputLocalPlayerSubsystem* EnhancedInputSystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
-	{
-		// 1. 移除旧角色的 SpecialIMC
-		if (ActiveSpecialIMC)
-		{
-			EnhancedInputSystem->RemoveMappingContext(ActiveSpecialIMC);
-			ActiveSpecialIMC = nullptr;
-		}
+	UInputManager* InputManager = UProjectBlueprintFunctionLibrary::GetInputManager(this);
+	if (!InputManager) return;
 
-		// 2. 添加新角色的 SpecialIMC
-		UInputInfo* InputInfo = UProjectBlueprintFunctionLibrary::GetConfigManager(this)->GetInputInfo();
-		if (!InputInfo) return;
-		FInputSetting* NewSetting = InputInfo->PlayerCategoryToInputSetting.Find(NewCategory);
-		if (NewSetting && NewSetting->SpecialProjectInputMappingContext)
-		{
-			ActiveSpecialIMC = NewSetting->SpecialProjectInputMappingContext;
-			EnhancedInputSystem->AddMappingContext(ActiveSpecialIMC, 1);
-		}
+	UInputInfo* InputInfo = UProjectBlueprintFunctionLibrary::GetConfigManager(this)->GetInputInfo();
+	if (!InputInfo) return;
+
+	FInputSetting* NewSetting = InputInfo->PlayerCategoryToInputSetting.Find(NewCategory);
+	if (!NewSetting) return;
+
+	if (CurrentSpecialIMCTag.IsValid())
+	{
+		InputManager->DeactivateMappedInputMappingContextByTag(CurrentSpecialIMCTag);
+		CurrentSpecialIMCTag = FGameplayTag();
 	}
+
+	if (!NewSetting->SpecialIMCTag.IsValid()) return;
+
+	UInputMappingContext* TempInputMappingContext = nullptr;
+	int32 InputMappingPriority = 0;
+	if (!InputInfo->GetIMCWithPriority(NewSetting->SpecialIMCTag, TempInputMappingContext, InputMappingPriority)) return;
+	if (!InputManager->ActivateMappedInputMappingContextByTag(NewSetting->SpecialIMCTag, InputMappingPriority)) return;
+
+	CurrentSpecialIMCTag = NewSetting->SpecialIMCTag;
+}
+
+void AProjectPlayerController::Server_SwitchCharacter_Implementation(const int32 TargetIndex)
+{
+	AProjectPlayerState* ProjectPlayerState = GetPlayerState<AProjectPlayerState>();
+	if (!PlayerState || !ProjectPlayerState->TeamArray.IsValidIndex(TargetIndex)) return;
+
+	AProjectPlayerCharacter* OldChar = Cast<AProjectPlayerCharacter>(GetPawn());
+	AProjectPlayerCharacter* NewChar = ProjectPlayerState->TeamArray[TargetIndex].Character;
+
+	if (!OldChar || !NewChar || OldChar == NewChar) return;
+
+	const FVector Location = OldChar->GetActorLocation();
+	const FRotator Rotation = OldChar->GetActorRotation();
+	NewChar->SetActorLocationAndRotation(Location, Rotation);
+
+	OldChar->SetActorHiddenInGame(true);
+	OldChar->SetActorTickEnabled(false);
+	OldChar->GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	OldChar->GetCharacterMovement()->Deactivate();
+
+	NewChar->SetActorHiddenInGame(false);
+	NewChar->SetActorTickEnabled(true);
+	NewChar->GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	NewChar->GetCharacterMovement()->Activate();
+
+	this->Possess(NewChar);
+
+	NewChar->GetAbilitySystemComponent()->InitAbilityActorInfo(NewChar, NewChar);
 }

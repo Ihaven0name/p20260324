@@ -2,6 +2,17 @@
 
 #include "GAS/ProjectGameplayTag.h"
 
+FString UProjectGameInstance::GetSaveSlotName(const EProjectSaveSlotName InSaveSlotName)
+{
+	switch (InSaveSlotName)
+	{
+	case EProjectSaveSlotName::MappableKey:
+		return TEXT("MappableKeySlot");
+	default:
+		return TEXT("UnknownSaveSlot");
+	}
+}
+
 void UProjectGameInstance::Init()
 {
 	Super::Init();

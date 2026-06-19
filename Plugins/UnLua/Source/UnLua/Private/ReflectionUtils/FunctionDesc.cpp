@@ -212,7 +212,7 @@ int32 FFunctionDesc::CallUE(lua_State *L, int32 NumParams, void *Userdata)
 
 #if ENABLE_CALL_OVERRIDDEN_FUNCTION
     if (!Function->HasAnyFunctionFlags(FUNC_Net))
-    {
+    {   
         const auto LuaFunction = ULuaFunction::Get(Function.Get());
         if (LuaFunction && LuaFunction->GetOverridden())
             FinalFunction = LuaFunction->GetOverridden();

@@ -43,7 +43,8 @@ void UProjectAbilitySystemComponent::AbilityInputTagPressed(const FGameplayTag A
 	FScopedAbilityListLock ScopedAbilityListLock(*this);
 	for (FGameplayAbilitySpec& TempGameplaySpec : GetActivatableAbilities())
 	{
-		if (TempGameplaySpec.GetPrimaryInstance()->AbilityTags.HasTagExact(AbilityTag))
+		UGameplayAbility* Temp = TempGameplaySpec.GetPrimaryInstance();
+		if (Temp->AbilityTags.HasTagExact(AbilityTag))
 		{
 			AbilitySpecInputPressed(TempGameplaySpec);
 			// 触发网络复制事件

@@ -5,7 +5,7 @@
 #include "UI/WidgetController/MainAttackUIWidgetController.h"
 #include "UI/WidgetController/SettingUIWidgetController.h"
 #include "UI/WidgetController/AttributeWidgetController.h"
-#include "UI/WidgetController/ProjectWidgetController.h"
+#include "UI/WidgetController/ProjectBaseWidgetController.h"
 #include "UI/Widget/ProjectUserWidget.h"
 #include "GAS/ProjectBlueprintFunctionLibrary.h"
 #include "GAS/ProjectGameplayTag.h"

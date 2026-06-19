@@ -2,6 +2,8 @@
 
 #include "AbilitySystemComponent.h"
 #include "AbilitySystemBlueprintLibrary.h"
+#include "CommonInputSubsystem.h"
+#include "EnhancedInputSubsystems.h"
 #include "GameplayAbilitySpec.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -15,8 +17,10 @@
 #include "Manager/SaveManager.h"
 #include "Manager/UIManager.h"
 #include "Manager/EnemyManager.h"
+#include "Manager/TeamManager.h"
 #include "GAS/ProjectGameplayEffectType.h"
 #include "GAS/ProjectGameplayTag.h"
+#include "Input/CommonUIInputSettings.h"
 #include "p20260324/LogChannel.h"
 
 #include "Player/ProjectPlayerCharacter.h"
@@ -25,8 +29,11 @@
 #include "UI/WidgetController/MainAttackUIWidgetController.h"
 #include "UI/WidgetController/SettingUIWidgetController.h"
 #include "UI/WidgetController/AttributeWidgetController.h"
-#include "UI/WidgetController/ProjectWidgetController.h"
+#include "UI/WidgetController/ProjectBaseWidgetController.h"
+#include "UserSettings/EnhancedInputUserSettings.h"
 
+class UEnhancedInputUserSettings;
+class UEnhancedInputLocalPlayerSubsystem;
 struct FFindFloorResult;
 class UCharacterMovementComponent;
 
@@ -154,6 +161,15 @@ UEnemyManager* UProjectBlueprintFunctionLibrary::GetEnemyManager(const UObject* 
 	return GI ? GI->GetSubsystem<UEnemyManager>() : nullptr;
 }
 
+UTeamManager* UProjectBlueprintFunctionLibrary::GetTeamManager(const APlayerController* PlayerController)
+{
+	if (!PlayerController) return nullptr;
+	const ULocalPlayer* LocalPlayer=PlayerController->GetLocalPlayer();
+	if (!LocalPlayer) return nullptr;
+	return LocalPlayer->GetSubsystem<UTeamManager>();
+}
+
+
 void UProjectBlueprintFunctionLibrary::CalculateCurrentLevel(
 	UProjectAttributeSet* AttributeSet,
 	int32 TempXP,
@@ -166,7 +182,7 @@ void UProjectBlueprintFunctionLibrary::CalculateCurrentLevel(
 		UE_LOG(LogProject,Error,TEXT("In Calculate Current Level AttributeSet Owner Is Not AProjectPlayerCharacter"))
 		return;
 	}
-	AActor* AttributeSetOwner=AttributeSet->GetActorInfo()->OwnerActor.Get();
+	AActor* AttributeSetOwner=AttributeSet->GetActorInfo()->AvatarActor.Get();
 	if (AttributeSetOwner->Implements<UPlayerInterface>())
 	{
 		UConfigManager* ConfigManager= GetConfigManager(AttributeSetOwner);
@@ -239,7 +255,8 @@ bool UProjectBlueprintFunctionLibrary::CanActivateAbilityAndOutputSpec(UAbilityS
 	FScopedAbilityListLock ScopedAbilityListLock(*ASC);
 	for (const FGameplayAbilitySpec& Spec : ASC->GetActivatableAbilities())
 	{
-		if (Spec.GetPrimaryInstance()->AbilityTags.HasTagExact(AbilityTag))
+		UGameplayAbility* Temp = Spec.GetPrimaryInstance();
+		if (Temp->AbilityTags.HasTagExact(AbilityTag))
 		{
 			if (Spec.GetPrimaryInstance()->CanActivateAbility(Spec.Handle, ASC->AbilityActorInfo.Get()))
 			{
@@ -299,76 +316,170 @@ FGameplayEffectContextHandle UProjectBlueprintFunctionLibrary::ApplyDamageGamepl
 	return ContextHandle;
 }
 
-bool UProjectBlueprintFunctionLibrary::MakeWidgetControllerParam(
-	UObject* WorldContextObject,
-	FWidgetControllerParam& OutWidgetControllerParam
+
+UMainAttackUIWidgetController* UProjectBlueprintFunctionLibrary::GetMainAttackUIWidgetController(const AProjectPlayerController* InPlayerController)
+{
+	return GetUIManager(InPlayerController)->GetMainAttackUIWidgetController(const_cast<AProjectPlayerController*>(InPlayerController));
+}
+
+USettingUIWidgetController* UProjectBlueprintFunctionLibrary::GetSettingUIWidgetController(const AProjectPlayerController* InPlayerController)
+{
+	return GetUIManager(InPlayerController)->GetSettingUIWidgetController(const_cast<AProjectPlayerController*>(InPlayerController));
+}
+
+UAttributeWidgetController* UProjectBlueprintFunctionLibrary::GetAttributeUIWidgetController(const AProjectPlayerController* InPlayerController)
+{
+	return GetUIManager(InPlayerController)->GetAttributeWidgetController(const_cast<AProjectPlayerController*>(InPlayerController));
+}
+
+UInventoryUIWidgetController* UProjectBlueprintFunctionLibrary::GetInventoryUIWidgetController(const AProjectPlayerController* InPlayerController)
+{
+	return GetUIManager(InPlayerController)->GetInventoryUIWidgetController(const_cast<AProjectPlayerController*>(InPlayerController));
+}
+
+UProjectBaseWidgetController* UProjectBlueprintFunctionLibrary::GetWidgetControllerByWidgetTag(const AProjectPlayerController* InPlayerController, const FGameplayTag& WidgetTag)
+{
+	return GetUIManager(InPlayerController)->GetWidgetControllerByWidgetTag(WidgetTag, const_cast<AProjectPlayerController*>(InPlayerController));
+}
+
+TSoftObjectPtr<UTexture2D> UProjectBlueprintFunctionLibrary::GetTeamCharacterTexture(const FTeamCharacterInfo& TeamCharacterInfo)
+{
+	return TeamCharacterInfo.TeamStaticInfo.CharacterTexture;
+}
+
+void UProjectBlueprintFunctionLibrary::RebindOnCommonUIAction(
+    APlayerController* PC,
+    FUIActionTag ActionTag,
+    FName MappingName,
+    FKey NewKey
 )
 {
-	if (UWorld* World = WorldContextObject->GetWorld())
-	{
-		if (APlayerController* PC = UGameplayStatics::GetPlayerController(World, 0))
-		{
-			AProjectPlayerController* ProjectPC = Cast<AProjectPlayerController>(PC);
-			AProjectAttackHUD* AttackHUD = Cast<AProjectAttackHUD>(ProjectPC->GetHUD());
-			AProjectPlayerCharacter* ProjectCharacter = Cast<AProjectPlayerCharacter>(ProjectPC->GetCharacter());
-			UProjectAttributeSet* ProjectAttributeSet = Cast<UProjectAttributeSet>(ProjectCharacter->GetAttributeSet());
-			if (!ProjectPC || !AttackHUD || !ProjectCharacter) return false;
+    if (!PC) return;
 
-			UProjectAbilitySystemComponent* ASC = Cast<UProjectAbilitySystemComponent>(UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(ProjectCharacter));
+    // --- 1. 修改 Enhanced Input (IMC 部分) ---
+    if (ULocalPlayer* LP = PC->GetLocalPlayer())
+    {
+        if (UEnhancedInputLocalPlayerSubsystem* EISubsystem = LP->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>())
+        {
+            if (UEnhancedInputUserSettings* UserSettings = EISubsystem->GetUserSettings())
+            {
+                FMapPlayerKeyArgs Args = {};
+                Args.Slot = EPlayerMappableKeySlot::First;
+            	Args.MappingName = MappingName;
+                Args.NewKey = NewKey;
 
-			OutWidgetControllerParam.PlayerCharacter = ProjectCharacter;
-			OutWidgetControllerParam.PlayerController = ProjectPC;
-			OutWidgetControllerParam.AbilitySystemComponent = ASC;
-			OutWidgetControllerParam.AttributeSet=ProjectAttributeSet;
-			return true;
-		}
-	}
-	return false;
+                FGameplayTagContainer FailureReason;
+                UserSettings->MapPlayerKey(Args, FailureReason);
+                UserSettings->ApplySettings();
+                UserSettings->SaveSettings();
+            }
+        }
+    }
+
+    // --- 2. 修改 CommonUI Settings (利用 ActionOverrides 覆盖层) ---
+    UCommonUIInputSettings* Settings = const_cast<UCommonUIInputSettings*>(&UCommonUIInputSettings::Get());
+    UClass* SettingsClass = UCommonUIInputSettings::StaticClass();
+
+    // 获取两个关键数组的属性
+    FArrayProperty* OverridesProp = FindFieldChecked<FArrayProperty>(SettingsClass, "ActionOverrides");
+    FArrayProperty* InputActionsProp = FindFieldChecked<FArrayProperty>(SettingsClass, "InputActions");
+
+    FScriptArrayHelper OverridesHelper(OverridesProp, OverridesProp->ContainerPtrToValuePtr<void>(Settings));
+    FScriptArrayHelper ActionsHelper(InputActionsProp, InputActionsProp->ContainerPtrToValuePtr<void>(Settings));
+
+	UScriptStruct* ActionStruct = CastChecked<UScriptStruct>(OverridesProp->Inner->GetOwnerStruct());
+	
+    uint8* TargetOverridePtr = nullptr;
+
+    // A. 先在 ActionOverrides 中寻找是否已有该 Tag 的覆盖
+    for (int32 i = 0; i < OverridesHelper.Num(); ++i)
+    {
+        uint8* Ptr = OverridesHelper.GetRawPtr(i);
+        FUIActionTag* Tag = FindFieldChecked<FStructProperty>(ActionStruct, "ActionTag")->ContainerPtrToValuePtr<FUIActionTag>(Ptr);
+        if (Tag && *Tag == ActionTag)
+        {
+            TargetOverridePtr = Ptr;
+            break;
+        }
+    }
+
+    // B. 如果没有覆盖，从 InputActions 拷贝一份基础模板到 Overrides
+    if (!TargetOverridePtr)
+    {
+        for (int32 i = 0; i < ActionsHelper.Num(); ++i)
+        {
+        	uint8* SourcePtr = ActionsHelper.GetRawPtr(i);
+            FUIActionTag* Tag = FindFieldChecked<FStructProperty>(ActionStruct, "ActionTag")->ContainerPtrToValuePtr<FUIActionTag>(SourcePtr);
+            if (Tag && *Tag == ActionTag)
+            {
+                int32 NewIdx = OverridesHelper.AddValue();
+                TargetOverridePtr = OverridesHelper.GetRawPtr(NewIdx);
+                // 深度拷贝整个结构体内容
+            	ActionStruct->CopyScriptStruct(TargetOverridePtr, SourcePtr, 1);
+                break;
+            }
+        }
+    }
+
+    // C. 对查找到或创建的 Override 条目进行按键更新
+    if (TargetOverridePtr)
+    {
+        FArrayProperty* MappingsProp = FindFieldChecked<FArrayProperty>(ActionStruct, "KeyMappings");
+        FScriptArrayHelper MappingsHelper(MappingsProp, MappingsProp->ContainerPtrToValuePtr<void>(TargetOverridePtr));
+        UStruct* MappingStruct = CastFieldChecked<FStructProperty>(MappingsProp->Inner)->Struct; // FUIActionKeyMapping
+
+        bool bFoundAndUpdated = false;
+        bool bIsGamepad = NewKey.IsGamepadKey();
+
+        for (int32 j = 0; j < MappingsHelper.Num(); ++j)
+        {
+            uint8* MappingPtr = MappingsHelper.GetRawPtr(j);
+            FKey* KeyPtr = FindFieldChecked<FStructProperty>(MappingStruct, "Key")->ContainerPtrToValuePtr<FKey>(MappingPtr);
+            if (KeyPtr && KeyPtr->IsGamepadKey() == bIsGamepad)
+            {
+                *KeyPtr = NewKey;
+                bFoundAndUpdated = true;
+                break;
+            }
+        }
+
+        if (!bFoundAndUpdated)
+        {
+        	int32 NewIdx = MappingsHelper.AddValue();
+        	uint8* NewMappingPtr = MappingsHelper.GetRawPtr(NewIdx);
+    
+        	// 重新获取一下新格子的 Key 属性指针
+        	FStructProperty* NewKeyProp = FindFieldChecked<FStructProperty>(MappingStruct, "Key");
+        	FKey* KeyPtr = NewKeyProp->ContainerPtrToValuePtr<FKey>(NewMappingPtr);
+        	if (KeyPtr)
+        	{
+        		*KeyPtr = NewKey; // 填入新按键
+        	}
+        }
+    }
+
+    // --- 3. 广播刷新 ---
+    if (UCommonInputSubsystem* InputSubsystem = UCommonInputSubsystem::Get(PC->GetLocalPlayer()))
+    {
+        // 重新设置输入类型以触发按钮的图标更新逻辑
+        InputSubsystem->OnInputMethodChangedNative.Broadcast(InputSubsystem->GetCurrentInputType());
+    }
+
+	
+    // --- 4. 持久化 ---
+    Settings->SaveConfig();
 }
 
-UMainAttackUIWidgetController* UProjectBlueprintFunctionLibrary::GetMainAttackUIWidgetController(UObject* WorldContextObject)
-{
-	FWidgetControllerParam Params;
-	if (MakeWidgetControllerParam(WorldContextObject, Params))
-	{
-		GetUIManager(Params.PlayerController)->GetMainAttackUIWidgetController(Params);
-	}
-	return nullptr;
-}
-
-USettingUIWidgetController* UProjectBlueprintFunctionLibrary::GetSettingUIWidgetController(UObject* WorldContextObject)
-{
-	FWidgetControllerParam Params;
-	if (MakeWidgetControllerParam(WorldContextObject, Params))
-	{
-		return GetUIManager(Params.PlayerController)->GetSettingUIWidgetController(Params);
-	}
-	return nullptr;
-}
-
-UAttributeWidgetController* UProjectBlueprintFunctionLibrary::GetAttributeWidgetController(UObject* WorldContextObject)
-{
-	FWidgetControllerParam Params;
-	if (MakeWidgetControllerParam(WorldContextObject, Params))
-	{
-		return GetUIManager(Params.PlayerController)->GetAttributeWidgetController(Params);
-	}
-	return nullptr;
-}
-
-UProjectWidgetController* UProjectBlueprintFunctionLibrary::GetWidgetControllerByWidgetTag(
-	UObject* WorldContextObject,
-	const FGameplayTag& WidgetTag
+void UProjectBlueprintFunctionLibrary::ApplyGameplayEffectSpecToSelfByClass(
+	UProjectAbilitySystemComponent* AbilitySystemComponent,
+	const TSubclassOf<UGameplayEffect> GameplayEffectClass
 )
 {
-	FWidgetControllerParam Params;
-	if (MakeWidgetControllerParam(WorldContextObject, Params))
-	{
-		return GetUIManager(Params.PlayerController)->GetWidgetControllerByWidgetTag(Params,WidgetTag);
-	}
-	return nullptr;
+	FGameplayEffectContextHandle EffectContextHandle=AbilitySystemComponent->MakeEffectContext();
+	EffectContextHandle.AddSourceObject(AbilitySystemComponent->GetAvatarActor());
+	const FGameplayEffectSpecHandle EffectSpecHandle=AbilitySystemComponent->MakeOutgoingSpec(GameplayEffectClass,1.f,EffectContextHandle);
+	AbilitySystemComponent->ApplyGameplayEffectSpecToSelf(*EffectSpecHandle.Data.Get());
 }
-
 
 // ==========================================
 // Initialize Player Startup Abilities (Offensive / Passive)

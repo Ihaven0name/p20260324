@@ -47,7 +47,19 @@ void UConfigManager::Initialize(FSubsystemCollectionBase& Collection)
 	{
 		WidgetInfo=LoadObject<UWidgetInfo>(nullptr,TEXT("/Game/Blueprint/DataAsset/DA_WidgetInfo.DA_WidgetInfo"));
 	}
-	
+
+	if (!InventoryInfo)
+	{
+		InventoryInfo=LoadObject<UInventoryInfo>(nullptr,TEXT("/Game/Blueprint/DataAsset/DA_InventoryInfo.DA_InventoryInfo"));
+	}
+	if (!MappableInfo)
+	{
+		MappableInfo = LoadObject<UMappableInfo>(nullptr, TEXT("/Game/Blueprint/DataAsset/DA_MappableInfo.DA_MappableInfo"));
+	}
+	if (!TeamInfo)
+	{
+		TeamInfo = LoadObject<UTeamInfo>(nullptr,TEXT("/Game/Blueprint/DataAsset/DA_TeamInfo.DA_TeamInfo"));
+	}
 }
 
 UCurveTable* UConfigManager::GetCurveTableByRowName(FName RowName) const

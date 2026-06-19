@@ -7,7 +7,7 @@
 #include "WidgetInfo.generated.h"
 
 class UCommonActivatableWidget;
-class UProjectWidgetController;
+class UProjectBaseWidgetController;
 class UProjectMainUIUserWidget;
 
 
@@ -18,10 +18,9 @@ struct FWidgetProperty
 	UPROPERTY(EditAnywhere)
 	FGameplayTag StackLayerTag;
 	UPROPERTY(EditAnywhere)
-	TSubclassOf<UCommonActivatableWidget> WidgetClass;
+	FGameplayTag ControllerTag;
 	UPROPERTY(EditAnywhere)
-	TSubclassOf<UProjectWidgetController> WidgetControllerClass;
-	
+	TSubclassOf<UCommonActivatableWidget> WidgetClass;
 };
 
 UCLASS()
@@ -32,8 +31,12 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TMap<FGameplayTag,FWidgetProperty> WidgetTagToWidgetProperty;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TMap<FGameplayTag,TSubclassOf<UProjectBaseWidgetController>> ControllerTagToWidgetController;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TSubclassOf<UProjectMainUIUserWidget> MainUIClass;
 
 	UFUNCTION(BlueprintCallable)
 	bool FindWidgetProperty(const FGameplayTag WidgetTag,FWidgetProperty& OutWidgetProperty);
+	UFUNCTION(BlueprintCallable)
+	bool FindWidgetControllerClass(const FGameplayTag ControllerTag,TSubclassOf<UProjectBaseWidgetController>& WidgetControllerClass);
 };

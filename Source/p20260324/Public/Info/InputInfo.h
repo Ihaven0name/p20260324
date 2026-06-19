@@ -15,21 +15,6 @@ class UInputMappingContext;
 
 enum class ETriggerType : uint8;
 
-USTRUCT(BlueprintType)
-struct FInputLoadSaveData
-{
-	GENERATED_BODY()
-	UPROPERTY()
-	FGameplayTag ActionTag;
-	UPROPERTY()
-	FGameplayTag InputTag;
-	UPROPERTY()
-	bool bShift;
-	UPROPERTY()
-	bool bControl;
-	UPROPERTY()
-	bool bAlt;
-};
 
 //TODO:后面需要添加所有的需要的Tag，包括自己创建的ActivationHasAnyTags，在GA的构造函数读取这些东西，然后进行初始化，这样可以方便配置
 USTRUCT(BlueprintType)
@@ -57,17 +42,6 @@ struct FInputActionAndAbilityInputData
 	TArray<FAbilityInputData> AbilityInputData;
 };
 
-USTRUCT(BlueprintType)
-struct FActionInfo
-{
-	GENERATED_BODY()
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-	FGameplayTag ActionTag;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-	TObjectPtr<UInputAction> InputAction;
-};
-
-
 
 USTRUCT(BlueprintType)
 struct FInputSetting
@@ -76,7 +50,20 @@ struct FInputSetting
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	TArray<FInputActionAndAbilityInputData> InputActionAndAbilityInputDataArray;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-	TObjectPtr<UInputMappingContext>SpecialProjectInputMappingContext;
+	FGameplayTag SpecialIMCTag;
+	
+};
+
+USTRUCT(BlueprintType)
+struct FInputMappingContextWithPriority
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="InputMappingContext")
+	TObjectPtr<UInputMappingContext> InputMappingContext = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="InputMappingContext")
+	int32 InputMappingPriority = 0;
 };
 
 UCLASS()
@@ -86,9 +73,22 @@ class P20260324_API UInputInfo : public UDataAsset
 public:
 	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category="InputMappingContext")
 	TObjectPtr<UInputMappingContext> DefaultProjectAttackInputMappingContext;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="TriggerAction")
+	TObjectPtr<UInputAction> AltTriggerAction;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="TriggerAction")
+	TObjectPtr<UInputAction> ControlTriggerAction;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="TriggerAction")
+	TObjectPtr<UInputAction> ShiftTriggerAction;
 	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category="InputMappingContext")
-	TObjectPtr<UInputMappingContext> DefaultProjectUIInputMappingContext;
+	TMap<FGameplayTag,FInputMappingContextWithPriority> IMCTagToMappableInputMappingContext;
+	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category="InputMappingContext")
+	TMap<FGameplayTag,FInputMappingContextWithPriority> IMCTagToNonMappableInputMappingContext;
 	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category="InputMappingContext")
 	TMap<EPlayerCategory,FInputSetting> PlayerCategoryToInputSetting;
+
+	UFUNCTION(BlueprintPure, Category="InputMappingContext")
+	bool GetMappableIMC(const FGameplayTag& IMCTag, UInputMappingContext*& OutIMC) const;
+	UFUNCTION(BlueprintPure, Category="InputMappingContext")
+	bool GetIMCWithPriority(const FGameplayTag& IMCTag, UInputMappingContext*& OutIMC, int32& OutPriority) const;
 	
 };

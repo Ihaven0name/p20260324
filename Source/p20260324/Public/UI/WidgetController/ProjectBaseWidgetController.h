@@ -1,18 +1,23 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "LuaValue.h"
 #include "ProjectGameInstance.h"
-#include "UObject/NoExportTypes.h"
-#include "ProjectWidgetController.generated.h"
+#include "Info/InputActionInfo.h"
+#include "ProjectBaseWidgetController.generated.h"
 
-class UProjectCommonUserWidget;
+class UInputAction;
+class UProjectCommonActivatableWidget;
 class UProjectAttributeSet;
 class UProjectAbilitySystemComponent;
 class AProjectPlayerCharacter;
 class AProjectPlayerController;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAttributeValueChangeSignature,const float, NewValue);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnChangeWidgetControllerParamSignature);
+
+
+
+
 
 USTRUCT(BlueprintType)
 struct P20260324_API FWidgetControllerParam
@@ -24,9 +29,6 @@ struct P20260324_API FWidgetControllerParam
 	TObjectPtr<AProjectPlayerCharacter> PlayerCharacter;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TObjectPtr<AProjectPlayerController> PlayerController;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TObjectPtr<UProjectAbilitySystemComponent> AbilitySystemComponent;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -34,7 +36,7 @@ struct P20260324_API FWidgetControllerParam
 };
 
 UCLASS(Blueprintable)
-class P20260324_API UProjectWidgetController : public UObject
+class P20260324_API UProjectBaseWidgetController : public UObject
 {
 	GENERATED_BODY()
 	
@@ -44,29 +46,28 @@ public:
 	UPROPERTY(BlueprintAssignable)
 	FOnAttributeValueChangeSignature OnManaChangeSignature;
 	UPROPERTY(BlueprintAssignable)
-	FOnChangeWidgetControllerParamSignature OnChangeWidgetControllerParamSignature;
+	FOnAttributeValueChangeSignature OnMaxHealthChangeSignature;
+	UPROPERTY(BlueprintAssignable)
+	FOnAttributeValueChangeSignature OnMaxManaChangeSignature;
+	
+
 
 	
 	
 	
-	virtual void InitWidgetController(const FWidgetControllerParam& Params);
+	virtual void InitWidgetController(AProjectPlayerController* InPlayerController);
+	//子类在继承的时候需要进行super
 	virtual void BindCallback();
 	UFUNCTION()
 	virtual void BroadcastInitialAttribute() const;
-	UFUNCTION()
-	virtual void BindingInputActionByTag(const FGameplayTag InputActionTag);
 	
-
-
-
-	UPROPERTY(BlueprintReadWrite)
-	TObjectPtr<AProjectPlayerCharacter> PlayerCharacter;
+	
 	UPROPERTY(BlueprintReadWrite)
 	TObjectPtr<AProjectPlayerController> PlayerController;
-	UPROPERTY(BlueprintReadWrite)
-	TObjectPtr<UProjectAbilitySystemComponent> AbilitySystemComponent;
-	UPROPERTY(BlueprintReadWrite)
-	TObjectPtr<UProjectAttributeSet> AttributeSet;
+	
 	UFUNCTION(BlueprintCallable)
-	void OnChangeWidgetControllerParamFunction();
+	void CloseUIInputActionFunction(const FGameplayTag WidgetTag) const;
+	UFUNCTION(BlueprintCallable)
+	void OpenUIInputActionFunction(const FGameplayTag WidgetTag) const;
+
 };

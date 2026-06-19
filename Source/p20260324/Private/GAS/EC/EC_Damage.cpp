@@ -79,8 +79,11 @@ void UEC_Damage::Execute_Implementation(
 	const FGameplayTagContainer* SourceTag=Spec.CapturedSourceTags.GetAggregatedTags();
 	const FGameplayTagContainer* TargetTag=Spec.CapturedTargetTags.GetAggregatedTags();
 	const FProjectGameplayTag& ProjectGameplayTag=FProjectGameplayTag::Get();
+
 	AActor* SourceAvatar=ExecutionParams.GetSourceAbilitySystemComponent()->GetAvatarActor();
 	AActor* TargetAvatar=ExecutionParams.GetTargetAbilitySystemComponent()->GetAvatarActor();
+
+	
 	FGameplayEffectContextHandle Context = Spec.GetContext();
 	int32 SourceLevel=1;
 	int32 TargetLevel=1;

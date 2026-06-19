@@ -7,7 +7,7 @@
 --
 
 ---@type WBP_CharacterHead_C
-local M = UnLua.Class()
+local M = UnLua.Class(WidgetClassMap.CommonWidgetClass)
 
 function M:Initialize(Initializer)
     ---@type BP_AttributeUIWidgetController_C
@@ -17,6 +17,7 @@ end
 
 function M:AfterSetWidgetController()
     self.AttributeWidgetController=self:GetWidgetController()
+    self.Button_Switch.OnClicked:Remove(self,self.ButtonSwitchClicked)
     self.Button_Switch.OnClicked:Add(self,self.ButtonSwitchClicked)
 end
 

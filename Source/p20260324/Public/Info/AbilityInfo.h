@@ -15,6 +15,7 @@ struct FAbilityTagConfig : public FTableRowBase
 {
 	GENERATED_BODY()
 
+	virtual void OnDataTableChanged(const UDataTable* InDataTable, const FName InRowName) override;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Tags")
 	FGameplayTagContainer ActivationHasAnyTags;
 

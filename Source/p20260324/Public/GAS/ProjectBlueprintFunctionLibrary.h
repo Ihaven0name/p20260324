@@ -1,13 +1,20 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GameplayEffect.h"
 #include "GameplayEffectTypes.h"
+#include "Player/ProjectPlayerState.h"
+#include "ProjectAbilitySystemComponent.h"
+#include "ProjectGameplayTag.h"
+#include "UITag.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
+#include "UI/WidgetController/InventoryUIWidgetController.h"
 #include "ProjectBlueprintFunctionLibrary.generated.h"
 
+class UTeamManager;
 class AProjectPlayerCharacter;
 class UProjectAttributeSet;
-class UProjectWidgetController;
+class UProjectBaseWidgetController;
 class UAttributeWidgetController;
 class UProjectUserWidget;
 struct FDamageEffectParam;
@@ -63,6 +70,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Manager")
 	static UEnemyManager* GetEnemyManager(const UObject* WorldContext);
+
+	UFUNCTION(BlueprintCallable, Category = "Manager")
+	static UTeamManager* GetTeamManager(const APlayerController* PlayerController);
 
 	UFUNCTION(BlueprintCallable, Category = "Manager")
 	static void CalculateCurrentLevel(UProjectAttributeSet* AttributeSet,int32 TempXP, int& OutLevel, int& OutXP);
@@ -143,23 +153,41 @@ public:
 	// WidgetController Get Functions
 	// ==========================================
 
-	/**
-	 * 构建 WidgetControllerParam（从 WorldContextObject 获取 PlayerCharacter/PlayerController/ASC）
-	 */
-	static bool MakeWidgetControllerParam(
-		UObject* WorldContextObject,
-		FWidgetControllerParam& OutWidgetControllerParam
+
+
+	// --- MainAttack ---
+	UFUNCTION(BlueprintCallable, Category = "UI|Controller")
+	static UMainAttackUIWidgetController* GetMainAttackUIWidgetController(const AProjectPlayerController* InPlayerController);
+
+	// --- Setting ---
+	UFUNCTION(BlueprintCallable, Category = "UI|Controller")
+	static USettingUIWidgetController* GetSettingUIWidgetController(const AProjectPlayerController* InPlayerController);
+
+	// --- Attribute ---
+	UFUNCTION(BlueprintCallable, Category = "UI|Controller")
+	static UAttributeWidgetController* GetAttributeUIWidgetController(const AProjectPlayerController* InPlayerController);
+
+	// --- Inventory ---
+	UFUNCTION(BlueprintCallable, Category = "UI|Controller")
+	static UInventoryUIWidgetController* GetInventoryUIWidgetController(const AProjectPlayerController* InPlayerController);
+
+	// --- By Tag ---
+	UFUNCTION(BlueprintCallable, Category = "UI|Controller")
+	static UProjectBaseWidgetController* GetWidgetControllerByWidgetTag(const AProjectPlayerController* InPlayerController, const FGameplayTag& WidgetTag);
+
+	UFUNCTION(BlueprintPure, Category = "Team")
+	static TSoftObjectPtr<UTexture2D> GetTeamCharacterTexture(const FTeamCharacterInfo& TeamCharacterInfo);
+
+	UFUNCTION(BlueprintCallable, Category = "Input")
+    static void RebindOnCommonUIAction(
+    	APlayerController* PC,
+    	FUIActionTag ActionTag,
+    	FName MappingName,
+    	FKey NewKey
+    );
+	UFUNCTION(BlueprintCallable, Category = "Input")
+	static void ApplyGameplayEffectSpecToSelfByClass(
+		UProjectAbilitySystemComponent* AbilitySystemComponent,
+		TSubclassOf<UGameplayEffect> GameplayEffectClass
 	);
-
-	UFUNCTION(BlueprintCallable, Category = "UI|WidgetController")
-	static UMainAttackUIWidgetController* GetMainAttackUIWidgetController(UObject* WorldContextObject);
-
-	UFUNCTION(BlueprintCallable, Category = "UI|WidgetController")
-	static USettingUIWidgetController* GetSettingUIWidgetController(UObject* WorldContextObject);
-
-	UFUNCTION(BlueprintCallable, Category = "UI|WidgetController")
-	static UAttributeWidgetController* GetAttributeWidgetController(UObject* WorldContextObject);
-
-	UFUNCTION(BlueprintCallable, Category = "UI|WidgetController")
-	static UProjectWidgetController* GetWidgetControllerByWidgetTag(UObject* WorldContextObject,const FGameplayTag& WidgetTag);
 };

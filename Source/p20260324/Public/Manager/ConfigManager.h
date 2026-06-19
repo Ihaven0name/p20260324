@@ -9,7 +9,10 @@
 #include "Info/InputInfo.h"
 #include "Info/AbilityInfo.h"
 #include "Info/AttributeInfo.h"
+#include "Info/InventoryInfo.h"
+#include "Info/MappableInfo.h"
 #include "Info/WidgetInfo.h"
+#include "Info/TeamInfo.h"
 #include "ConfigManager.generated.h"
 
 
@@ -66,35 +69,53 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Config")
 	UWidgetInfo* GetWidgetInfo() const {return WidgetInfo;}
+
+	UFUNCTION(BlueprintCallable, Category = "Config")
+	UInventoryInfo* GetInventoryInfo()const {return InventoryInfo;}
+
+	UFUNCTION(BlueprintCallable, Category = "Config")
+	UMappableInfo* GetMappableInfo() const { return MappableInfo; }
+
+	UFUNCTION(BlueprintCallable, Category = "Config")
+	UTeamInfo* GetTeamInfo()const {return TeamInfo;}
 	
 
 private:
 	/** 引用全局曲线配置 DataTable */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Config|Curve", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, Category = "Config|Curve")
 	TObjectPtr<UDataTable> BasedCurveDataTable;
 
 	// /** 引用 Ability Tag 配置 DataTable */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Config|Curve", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, Category = "Config|Curve")
 	TObjectPtr<UCurveFloat> PlayerLevelCurveFloat;
 
 	//TODO:即将进行添加
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Config|Input",meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, Category = "Config|Curve")
 	TObjectPtr<UCurveTable> EnemyXPCurveTable;
 
 	/** 引用 CharacterInfo 数据资产 */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Config|Character", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, Category = "Config|Character")
 	TObjectPtr<UCharacterInfo> CharacterInfo;
 
 	/** 引用 InputInfo 输入配置数据资产 */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Config|Input", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, Category = "Config|Input")
 	TObjectPtr<UInputInfo> InputInfo;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Config|Ability",meta=(AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, Category = "Config|Ability")
 	TObjectPtr<UAttributeInfo> AttributeInfo;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Config|Ability",meta=(AllowPrivateAccess = "true"))
+
+	UPROPERTY(EditAnywhere, Category = "Config|Ability")
     TObjectPtr<UAbilityInfo> AbilityInfo;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Config|Attribute",meta=(AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, Category = "Config|Attribute")
 	TObjectPtr<UWidgetInfo> WidgetInfo;
+
+	UPROPERTY(EditAnywhere, Category = "Config|Inventory")
+	TObjectPtr<UInventoryInfo> InventoryInfo;
+
+	UPROPERTY(EditAnywhere, Category = "Config|Input")
+	TObjectPtr<UMappableInfo> MappableInfo;
+
+	UPROPERTY(EditAnywhere, Category = "Config|Widget")
+	TObjectPtr<UTeamInfo> TeamInfo;
 };

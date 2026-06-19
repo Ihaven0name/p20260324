@@ -6,7 +6,10 @@
       <Path>Plugins</Path>
       <Path>Plugins/UnLua/Content/IntelliSense</Path>
     </attachedFolders>
-    <explicitIncludes />
+    <explicitIncludes>
+      <Path>Source/p20260324/Private/UI/WidgetController/MultiControlWidgetController.cpp</Path>
+      <Path>Source/p20260324/Public/UI/WidgetController/MultiControlWidgetController.h</Path>
+    </explicitIncludes>
     <explicitExcludes />
   </component>
 </project>
