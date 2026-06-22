@@ -1,13 +1,10 @@
 #include "UI/Widget/ProjectCommonActivatableWidget.h"
 
+#include "EnhancedInputComponent.h"
 #include "GAS/ProjectBlueprintFunctionLibrary.h"
 #include "Manager/InputManager.h"
 #include "UnLuaEx.h"
-#include "Input/CommonUIInputTypes.h"
-#include "Input/UIActionBinding.h"
-
-
-class UCommonUIActionRouterBase;
+#include "UI/WidgetController/ProjectBaseWidgetController.h"
 
 UProjectCommonActivatableWidget::UProjectCommonActivatableWidget()
 {
@@ -30,7 +27,6 @@ void UProjectCommonActivatableWidget::NativeOnActivated()
 void UProjectCommonActivatableWidget::NativeOnDeactivated()
 {
 	BeforeNativeOnDeactivated();
-	UnbindActions();
 	if (bUseIMCTag)
 	{
 		if (UInputManager* InputManager = UProjectBlueprintFunctionLibrary::GetInputManager(this))
@@ -50,11 +46,9 @@ void UProjectCommonActivatableWidget::NativeDestruct()
 
 void UProjectCommonActivatableWidget::SetWidgetController(UObject* Controller)
 {
-	UE_LOG(LogTemp, Warning, TEXT("[ProjectUserWidget] SetWidgetController: Widget=%s, Controller=%s"),
-		*GetName(), Controller ? *Controller->GetClass()->GetName() : TEXT("nullptr"));
+	UnregisterActions();
 	WidgetController = Controller;
 	AfterSetWidgetController();
-	UE_LOG(LogTemp, Warning, TEXT("Widget Controller Set"));
 }
 
 UObject* UProjectCommonActivatableWidget::GetWidgetController()
@@ -77,35 +71,58 @@ void UProjectCommonActivatableWidget::ExecuteActionByTag(const FGameplayTag Acti
 
 void UProjectCommonActivatableWidget::BindAction(const FGameplayTag ActionTag,const UInputAction* InputAction, FOnUIActionExecuted OnUIActionExecuted)
 {
-	if (const FUIActionBindingHandle* OldHandle = ActionBindingHandles.Find(ActionTag))
-	{
-		AddActionBinding(*OldHandle);
-		return;
-	}
-	FSimpleDelegate OnExecuteAction;
-	OnExecuteAction.BindUObject(this, &UProjectCommonActivatableWidget::ExecuteActionByTag, ActionTag);
-
-	FBindUIActionArgs ActionArgs(InputAction, OnExecuteAction);
-	ActionArgs.InputMode = CommonInputMode;
-	ActionArgs.ActionTag = FUIActionTag::ConvertChecked(ActionTag);
-
-	ActionBindingHandles.Add(ActionTag, RegisterUIActionBinding(ActionArgs));
 	ActionDelegates.Add(ActionTag, OnUIActionExecuted);
+	BindEnhancedInputAction(ActionTag, InputAction);
 }
 
 void UProjectCommonActivatableWidget::UnbindActions()
 {
-	for (TTuple<FGameplayTag, FUIActionBindingHandle>& TempPair: ActionBindingHandles)
+	if (UEnhancedInputComponent* EnhancedInputComponent = GetEnhancedInputComponent())
 	{
-		RemoveActionBinding(TempPair.Value);
+		for (TTuple<FGameplayTag, uint32>& TempPair : ActionBindingHandles)
+		{
+			EnhancedInputComponent->RemoveBindingByHandle(TempPair.Value);
+		}
 	}
+	ActionBindingHandles.Empty();
 }
 
 void UProjectCommonActivatableWidget::UnregisterActions()
 {
-	for (TTuple<FGameplayTag, FUIActionBindingHandle>& TempPair: ActionBindingHandles)
-	{
-		TempPair.Value.Unregister();
-	}
+	UnbindActions();
 	ActionBindingHandles.Empty();
+	ActionDelegates.Empty();
+}
+
+bool UProjectCommonActivatableWidget::BindEnhancedInputAction(const FGameplayTag ActionTag, const UInputAction* InputAction)
+{
+	if (!InputAction) return false;
+
+	if (UEnhancedInputComponent* EnhancedInputComponent = GetEnhancedInputComponent())
+	{
+		if (uint32* OldHandle = ActionBindingHandles.Find(ActionTag))
+			EnhancedInputComponent->RemoveBindingByHandle(*OldHandle);
+
+		FEnhancedInputActionEventBinding& Binding = EnhancedInputComponent->BindAction(
+			InputAction,
+			ETriggerEvent::Started,
+			this,
+			&UProjectCommonActivatableWidget::ExecuteActionByTag,
+			ActionTag);
+
+		ActionBindingHandles.Add(ActionTag, Binding.GetHandle());
+		return true;
+	}
+
+	return false;
+}
+
+UEnhancedInputComponent* UProjectCommonActivatableWidget::GetEnhancedInputComponent() const
+{
+	APlayerController* PlayerController = nullptr;
+	if (const UProjectBaseWidgetController* BaseWidgetController = Cast<UProjectBaseWidgetController>(WidgetController))
+		PlayerController = BaseWidgetController->PlayerController;
+	if (!PlayerController) return nullptr;
+
+	return Cast<UEnhancedInputComponent>(PlayerController->InputComponent);
 }

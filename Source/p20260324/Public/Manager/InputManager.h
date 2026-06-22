@@ -234,3 +234,6 @@ protected:
 	// 通知 Enhanced Input 重新刷新控制映射
 	void RefreshControlMappings() const;
 };
+
+//TODO:记录一下我的修改键位功能是怎么实现的
+//TODO:我把runstart,runstop,runpivot的同步组关闭了,同步组似乎就是给循环动画用的,pivot的动画有问题

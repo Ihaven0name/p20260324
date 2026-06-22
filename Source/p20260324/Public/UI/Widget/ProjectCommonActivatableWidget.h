@@ -6,6 +6,8 @@
 #include "Info/InputActionInfo.h"
 #include "ProjectCommonActivatableWidget.generated.h"
 
+class UInputAction;
+class UEnhancedInputComponent;
 class UProjectBaseWidgetController;
 DECLARE_DYNAMIC_DELEGATE(FOnUIActionExecuted);
 UCLASS()
@@ -22,9 +24,9 @@ public:
 	TObjectPtr<UInputActionInfo> InputActionInfo;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category="Config|Tag")
 	FGameplayTag StackLayerTag;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category="Config|Input")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category="Config|Tag")
 	bool bUseIMCTag = false;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category="Config|Input", meta=(EditCondition="bUseIMCTag"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category="Config|Tag", meta=(EditCondition="bUseIMCTag"))
 	FGameplayTag IMCTag;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category="Config|Tag")
 	ECommonInputMode CommonInputMode;
@@ -57,10 +59,17 @@ protected:
 private:
 	UPROPERTY()
 	TObjectPtr<UObject> WidgetController;
-	TMap<FGameplayTag, FUIActionBindingHandle> ActionBindingHandles;
+
+	// 记录每个 ActionTag 对应的运行时输入绑定句柄，方便失活时解绑
+	TMap<FGameplayTag, uint32> ActionBindingHandles;
+
 	UPROPERTY()
 	TMap<FGameplayTag, FOnUIActionExecuted> ActionDelegates;
+
 	UFUNCTION()
 	void ExecuteActionByTag(FGameplayTag ActionTag);
+
+	bool BindEnhancedInputAction(FGameplayTag ActionTag, const UInputAction* InputAction);
+	UEnhancedInputComponent* GetEnhancedInputComponent() const;
 	
 };

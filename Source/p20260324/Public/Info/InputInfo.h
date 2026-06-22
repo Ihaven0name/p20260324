@@ -16,7 +16,6 @@ class UInputMappingContext;
 enum class ETriggerType : uint8;
 
 
-//TODO:后面需要添加所有的需要的Tag，包括自己创建的ActivationHasAnyTags，在GA的构造函数读取这些东西，然后进行初始化，这样可以方便配置
 USTRUCT(BlueprintType)
 struct FAbilityInputData
 {

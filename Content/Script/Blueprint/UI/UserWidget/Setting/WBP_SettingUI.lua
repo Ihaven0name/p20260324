@@ -42,6 +42,10 @@ function M:OnButtonClicked_ContinueGame()
     self.SettingWidgetController:CloseUIInputActionFunction(Tags.UI_Widget_Setting)
 end
 
+function M:BP_OnHandleBackAction()
+    UE.UGameplayStatics.SetGamePaused(self,false)
+end
+
 function M:OnButtonClicked_Setting()
     self.SettingWidgetController:OpenUIInputActionFunction(Tags.UI_Widget_Setting_SettingPanel)
 end
