@@ -9,6 +9,7 @@
     <explicitIncludes>
       <Path>Source/p20260324/Private/UI/WidgetController/MultiControlWidgetController.cpp</Path>
       <Path>Source/p20260324/Public/UI/WidgetController/MultiControlWidgetController.h</Path>
+      <Path>Source/p20260324Server.Target.cs</Path>
     </explicitIncludes>
     <explicitExcludes />
   </component>

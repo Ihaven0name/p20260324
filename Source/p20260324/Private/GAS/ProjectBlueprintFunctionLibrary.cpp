@@ -248,6 +248,15 @@ AActor* UProjectBlueprintFunctionLibrary::FindNearestActor(const AActor* Origina
 	return NearestActor;
 }
 
+bool UProjectBlueprintFunctionLibrary::CanAttackByFactionNames(const FName AttackerFaction, const FName TargetFaction)
+{
+	static const FName PlayerFaction(TEXT("Player"));
+	static const FName EnemyFaction(TEXT("Enemy"));
+
+	return (AttackerFaction == PlayerFaction && TargetFaction == EnemyFaction) ||
+		(AttackerFaction == EnemyFaction && TargetFaction == PlayerFaction);
+}
+
 bool UProjectBlueprintFunctionLibrary::CanActivateAbilityAndOutputSpec(UAbilitySystemComponent* ASC, const FGameplayTag& AbilityTag, FGameplayAbilitySpec& OutSpec)
 {
 	if (!ASC || !AbilityTag.IsValid()) return false;
@@ -272,16 +281,20 @@ bool UProjectBlueprintFunctionLibrary::CanActivateAbilityAndOutputSpec(UAbilityS
 
 void UProjectBlueprintFunctionLibrary::SetKnockBackImpulse(FGameplayEffectContextHandle& ContextHandle, const FVector& InKnockBackImpulse)
 {
-	if (FProjectGameplayEffectContext* ProjectContext = static_cast<FProjectGameplayEffectContext*>(ContextHandle.Get()))
+	FGameplayEffectContext* BaseContext = ContextHandle.Get();
+	if (BaseContext && BaseContext->GetScriptStruct() == FProjectGameplayEffectContext::StaticStruct())
 	{
+		FProjectGameplayEffectContext* ProjectContext = static_cast<FProjectGameplayEffectContext*>(BaseContext);
 		ProjectContext->SetKnockBackImpulse(InKnockBackImpulse);
 	}
 }
 
 FVector UProjectBlueprintFunctionLibrary::GetKnockBackImpulse(const FGameplayEffectContextHandle& ContextHandle)
 {
-	if (const FProjectGameplayEffectContext* ProjectContext = static_cast<const FProjectGameplayEffectContext*>(ContextHandle.Get()))
+	const FGameplayEffectContext* BaseContext = ContextHandle.Get();
+	if (BaseContext && BaseContext->GetScriptStruct() == FProjectGameplayEffectContext::StaticStruct())
 	{
+		const FProjectGameplayEffectContext* ProjectContext = static_cast<const FProjectGameplayEffectContext*>(BaseContext);
 		return ProjectContext->GetKnockBackImpulse();
 	}
 	return FVector::ZeroVector;
@@ -295,15 +308,30 @@ FGameplayEffectContextHandle UProjectBlueprintFunctionLibrary::ApplyDamageGamepl
 	UAbilitySystemComponent* TargetASC = DamageEffectParam.TargetAbilitySystemComponent;
 	const TSubclassOf<UGameplayEffect>& DamageEffectClass = DamageEffectParam.DamageEffectClass;
 	const int32 Level = DamageEffectParam.AbilityLevel;
+	if (!IsValid(SourceASC) || !IsValid(TargetASC) || !DamageEffectClass)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ApplyDamageGameplayEffectByDamageEffectParam: invalid source ASC, target ASC, or damage effect class."));
+		return FGameplayEffectContextHandle();
+	}
 
 	FGameplayEffectContextHandle ContextHandle = SourceASC->MakeEffectContext();
+	if (!ContextHandle.IsValid())
+	{
+		return FGameplayEffectContextHandle();
+	}
 
-	if (DamageEffectParam.KnockBackChance>FMath::RandRange(0.f,1.f))
+	const float KnockBackChance = FMath::Clamp(DamageEffectParam.KnockBackChance, 0.0f, 1.0f);
+	if (KnockBackChance > 0.0f && FMath::FRand() < KnockBackChance && !DamageEffectParam.KnockBackImpulse.IsNearlyZero())
 		SetKnockBackImpulse(ContextHandle, DamageEffectParam.KnockBackImpulse);
 
 	ContextHandle.AddSourceObject(SourceASC->GetAvatarActor());
 
 	FGameplayEffectSpecHandle SpecHandle = SourceASC->MakeOutgoingSpec(DamageEffectClass, Level, ContextHandle);
+	if (!SpecHandle.IsValid())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ApplyDamageGameplayEffectByDamageEffectParam: failed to create damage effect spec for %s."), *GetNameSafe(DamageEffectClass));
+		return ContextHandle;
+	}
 
 	UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(SpecHandle, GameplayTags.Caller_DamageMultiplier, DamageEffectParam.DamageMultiplier);
 	UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(SpecHandle, GameplayTags.Caller_Debuff_Data_Damage, DamageEffectParam.DebuffDamage);

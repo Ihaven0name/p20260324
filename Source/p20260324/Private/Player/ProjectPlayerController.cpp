@@ -7,6 +7,9 @@
 #include "InputMappingContext.h"
 #include "ProjectBaseCharacter.h"
 #include "ProjectGameInstance.h"
+#include "Components/EnemyVisibilityComponent.h"
+#include "Components/PlayerInteractionComponent.h"
+#include "Components/TargetLockComponent.h"
 #include "Manager/ConfigManager.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -16,27 +19,37 @@
 #include "Info/InputInfo.h"
 #include "Kismet/GameplayStatics.h"
 #include "Manager/EnemyManager.h"
+#include "Interface/EnemyInterface.h"
+#include "Interface/PlayerInterface.h"
 #include "Manager/InputManager.h"
 #include "Abilities/GameplayAbility.h"
 #include "Components/CapsuleComponent.h"
 #include "GAS/ProjectGameplayTag.h"
 #include "Input/ProjectInputComponent.h"
 #include "Manager/UIManager.h"
+#include "GameMode/PlayGameModeBase.h"
 #include "Player/ProjectPlayerState.h"
 #include "UI/HUD/ProjectAttackHUD.h"
 #include "UI/WidgetController/AttributeWidgetController.h"
+#include "UI/WidgetController/MainAttackUIWidgetController.h"
+#include "Manager/UIManager.h"
 
 class UEnhancedInputLocalPlayerSubsystem;
 
 AProjectPlayerController::AProjectPlayerController()
 {
-	
+	TargetLockComponent = CreateDefaultSubobject<UTargetLockComponent>(TEXT("TargetLockComponent"));
+	EnemyVisibilityComponent = CreateDefaultSubobject<UEnemyVisibilityComponent>(TEXT("EnemyVisibilityComponent"));
 }
 
 
 void AProjectPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
+	if (EnemyVisibilityComponent)
+	{
+		EnemyVisibilityComponent->RefreshTrackingState();
+	}
 
 	if (UInputManager* InputManager = GetGameInstance()->GetSubsystem<UInputManager>())
 	{
@@ -63,7 +76,7 @@ void AProjectPlayerController::SetupInputComponent()
 	UProjectInputComponent* EnhancedInputComponent=CastChecked<UProjectInputComponent>(InputComponent);
 	EnhancedInputComponent->BindAction(MoveAction,ETriggerEvent::Triggered,this,&ThisClass::MoveActionFunction);
 	EnhancedInputComponent->BindAction(LookAction,ETriggerEvent::Triggered,this,&ThisClass::LookActionFunction);
-	EnhancedInputComponent->BindAction(SpringArmScaleAction,ETriggerEvent::Triggered,this,&ThisClass::SpringArmScaleActionFunction);
+	EnhancedInputComponent->BindAction(WheelAction,ETriggerEvent::Triggered,this,&ThisClass::WheelActionFunction);
 	EnhancedInputComponent->BindAction(JumpAction,ETriggerEvent::Started,this,&ThisClass::JumpActionFunction);
 	EnhancedInputComponent->BindAction(LockOnAction,ETriggerEvent::Started,this,&ThisClass::LockOnActionFunction);
 	EnhancedInputComponent->BindAction(LockSwitchAction,ETriggerEvent::Triggered,this,&ThisClass::LockSwitchActionFunction);
@@ -87,14 +100,48 @@ void AProjectPlayerController::SetupInputComponent()
 	}
 }
 
-void AProjectPlayerController::PlayerTick(float DeltaTime)
+void AProjectPlayerController::OnPossess(APawn* InPawn)
 {
-	Super::PlayerTick(DeltaTime);
-	
-	// 更新锁定时的旋转插值
-	if (bIsLocking)
+	Super::OnPossess(InPawn);
+	AbilitySystemComponent = nullptr;
+	if (TargetLockComponent) TargetLockComponent->ResetLock();
+	if (EnemyVisibilityComponent) EnemyVisibilityComponent->RefreshTrackingState();
+	RefreshMainAttackUIWidgetController();
+}
+
+void AProjectPlayerController::OnRep_Pawn()
+{
+	Super::OnRep_Pawn();
+	AbilitySystemComponent = nullptr;
+	if (TargetLockComponent) TargetLockComponent->ResetLock();
+	if (EnemyVisibilityComponent) EnemyVisibilityComponent->RefreshTrackingState();
+	RefreshMainAttackUIWidgetController();
+}
+
+void AProjectPlayerController::RefreshMainAttackUIWidgetController()
+{
+	if (!GetPlayerCharacter())
 	{
-		UpdateLockOnRotationInterpolation(DeltaTime);
+		return;
+	}
+
+	ULocalPlayer* LocalPlayer = GetLocalPlayer();
+	UUIManager* UIManager = LocalPlayer ? LocalPlayer->GetSubsystem<UUIManager>() : nullptr;
+	if (UIManager)
+	{
+		if (const AProjectPlayerCharacter* CurrentCharacter = GetPlayerCharacter();
+			IsValid(CurrentCharacter) && !CurrentCharacter->bIsDead)
+		{
+			UIManager->PopWidget(FProjectGameplayTag::Get().UI_Widget_MainAttack_Death);
+		}
+	}
+	UMainAttackUIWidgetController* WidgetController = UIManager
+		? UIManager->GetMainAttackUIWidgetController(this)
+		: nullptr;
+
+	if (WidgetController)
+	{
+		WidgetController->OnChangeWidgetControllerParamSignature.Broadcast();
 	}
 }
 
@@ -136,9 +183,13 @@ bool AProjectPlayerController::FindActivatableAbilityTag()
 
 UProjectAbilitySystemComponent* AProjectPlayerController::GetAbilitySystemComponent()
 {
-	if (AbilitySystemComponent==nullptr)
+	AProjectPlayerCharacter* CurrentCharacter = GetPlayerCharacter();
+	UProjectAbilitySystemComponent* CurrentAbilitySystemComponent = IsValid(CurrentCharacter)
+		? CurrentCharacter->GetAbilitySystemComponent()
+		: nullptr;
+	if (AbilitySystemComponent != CurrentAbilitySystemComponent)
 	{
-		AbilitySystemComponent=GetPlayerCharacter()->GetAbilitySystemComponent();
+		AbilitySystemComponent = CurrentAbilitySystemComponent;
 	}
 	return AbilitySystemComponent;
 }
@@ -170,6 +221,7 @@ AProjectAttackHUD* AProjectPlayerController::GetProjectHUD()
 
 void AProjectPlayerController::MoveActionFunction(const FInputActionValue& Value)
 {
+	if (IsGameplayInputBlocked()) return;
 	if (GetAbilitySystemComponent()->HasMatchingGameplayTag(FProjectGameplayTag::Get().Block_InputAction_Move)) return;
 
 	FVector2D InputAxisVector=Value.Get<FVector2D>();
@@ -190,8 +242,9 @@ void AProjectPlayerController::MoveActionFunction(const FInputActionValue& Value
 
 void AProjectPlayerController::LookActionFunction(const FInputActionValue& Value)
 {
+	if (IsGameplayInputBlocked()) return;
 	if (GetAbilitySystemComponent()->HasMatchingGameplayTag(FProjectGameplayTag::Get().Block_InputAction_Look)) return;
-	if (bIsLocking) return;
+	if (TargetLockComponent && TargetLockComponent->IsLocking()) return;
 
 	const FVector2D InputAxisVector=Value.Get<FVector2D>();
 	const UProjectGameInstance* TempProjectGameInstance=GetProjectGameInstance();
@@ -201,18 +254,55 @@ void AProjectPlayerController::LookActionFunction(const FInputActionValue& Value
 	AddYawInput(DeltaYaw);
 }
 
-void AProjectPlayerController::SpringArmScaleActionFunction(const FInputActionValue& Value)
+void AProjectPlayerController::WheelActionFunction(const FInputActionValue& Value)
 {
-	if (GetAbilitySystemComponent()->HasMatchingGameplayTag(FProjectGameplayTag::Get().Block_InputAction_SpringArm)) return;
+	if (IsGameplayInputBlocked()) return;
+	const float WheelValue = Value.Get<float>();
+	if (FMath::IsNearlyZero(WheelValue))
+	{
+		return;
+	}
 
-	const float InputAxisFloat=Value.Get<float>();
-	int TargetArmLength=GetPlayerCharacter()->SpringArmComponent->TargetArmLength+InputAxisFloat*GetProjectGameInstance()->SpringArmChangeSensitivityScale;
-	TargetArmLength=FMathf::Clamp(TargetArmLength,GetPlayerCharacter()->MinSpringArmLength,GetPlayerCharacter()->MaxSpringArmLength);
-	GetPlayerCharacter()->SpringArmComponent->TargetArmLength=TargetArmLength;
+	AProjectPlayerCharacter* ControlledCharacter = GetPlayerCharacter();
+	if (!IsValid(ControlledCharacter))
+	{
+		return;
+	}
+
+	// 有当前交互目标时，由玩家交互组件切换目标，不同时缩放镜头。
+	UPlayerInteractionComponent* InteractionComponent = ControlledCharacter->GetPlayerInteractionComponent();
+	if (IsValid(InteractionComponent) && InteractionComponent->GetCurrentTarget())
+	{
+		InteractionComponent->CycleTarget(WheelValue > 0.0f ? 1 : -1);
+		return;
+	}
+
+	if (GetAbilitySystemComponent() &&
+		GetAbilitySystemComponent()->HasMatchingGameplayTag(FProjectGameplayTag::Get().Block_InputAction_SpringArm))
+	{
+		return;
+	}
+
+	if (!IsValid(ControlledCharacter->SpringArmComponent))
+	{
+		return;
+	}
+	UProjectGameInstance* ProjectGameInstance = GetProjectGameInstance();
+	if (!IsValid(ProjectGameInstance))
+	{
+		return;
+	}
+
+	const float TargetArmLength = FMath::Clamp(
+		ControlledCharacter->SpringArmComponent->TargetArmLength + WheelValue * ProjectGameInstance->SpringArmChangeSensitivityScale,
+		ControlledCharacter->MinSpringArmLength,
+		ControlledCharacter->MaxSpringArmLength);
+	ControlledCharacter->SpringArmComponent->TargetArmLength = TargetArmLength;
 }
 
 void AProjectPlayerController::JumpActionFunction(const FInputActionValue& Value)
 {
+	if (IsGameplayInputBlocked()) return;
 	if (GetAbilitySystemComponent()->HasMatchingGameplayTag(FProjectGameplayTag::Get().Block_InputAction_Jump)) return;
 	GetPlayerCharacter()->Jump();
 }
@@ -220,72 +310,29 @@ void AProjectPlayerController::JumpActionFunction(const FInputActionValue& Value
 
 void AProjectPlayerController::LockOnActionFunction(const FInputActionValue& Value)
 {
-	if (bIsLocking)
-	{
-		bIsLocking=false;
-		LockingActor=nullptr;
-		GetPlayerCharacter()->bUseControllerRotationYaw=false;
-		GetPlayerCharacter()->GetCharacterMovement()->bOrientRotationToMovement = true;
-	}
-	else
-	{
-		UEnemyManager* EnemyManager=UProjectBlueprintFunctionLibrary::GetEnemyManager(this);
-		const TArray<AActor*>& ScreenActors=EnemyManager->GetVisibleEnemies(GetPlayerCharacter());
-		AActor* TargetActor=UProjectBlueprintFunctionLibrary::FindNearestActor(GetPlayerCharacter(),ScreenActors);
-		if (TargetActor==nullptr) return;
-		
-		bIsLocking=true;
-		LockingActor=TargetActor;
-		GetPlayerCharacter()->bUseControllerRotationYaw=true;
-		GetPlayerCharacter()->GetCharacterMovement()->bOrientRotationToMovement = false;
-		LerpCurrentRotation = GetControlRotation();
-	}
+	if (IsGameplayInputBlocked()) return;
+	if (TargetLockComponent) TargetLockComponent->ToggleLockOn();
 }
 
 
 void AProjectPlayerController::LockSwitchActionFunction(const FInputActionValue& Value)
 {
-	if (!bIsLocking) return;
-	if (!LockingActor) return;
-	const float InputAxisFloat=Value.Get<float>();
-	SwitchTargetNumber+=InputAxisFloat * GetProjectGameInstance()->LockOnSwitchSensitivity;
-	if (SwitchTargetNumber>SwitchTargetThreshold)
-	{
-		UEnemyManager* EnemyManager=UProjectBlueprintFunctionLibrary::GetEnemyManager(GetPlayerCharacter());
-		if (AActor* NewActor = EnemyManager->GetSideEnemy(GetPlayerCharacter(),LockingActor,true,MaxLockAngle))
-		{
-			LockingActor=NewActor;
-		}
-		SwitchTargetNumber=0.f;
-	}
-	else if (SwitchTargetNumber<-SwitchTargetThreshold)
-	{
-		UEnemyManager* EnemyManager=UProjectBlueprintFunctionLibrary::GetEnemyManager(GetPlayerCharacter());
-		if (AActor* NewActor = EnemyManager->GetSideEnemy(GetPlayerCharacter(),LockingActor,false,MaxLockAngle))
-		{
-			LockingActor=NewActor;
-		}
-		SwitchTargetNumber=0.f;
-	}
-}
-
-
-void AProjectPlayerController::UpdateLockOnRotationInterpolation(float DeltaTime)
-{
-	const FVector TargetDirection = LockingActor->GetActorLocation() - GetPlayerCharacter()->GetActorLocation();
-	FRotator TargetRotation = TargetDirection.Rotation();
-	TargetRotation.Pitch=LockOnPitchRadius;
-	TargetRotation.Normalize();
-	// 使用插值逐渐转向目标方向
-	LerpCurrentRotation = FMath::RInterpTo(LerpCurrentRotation, TargetRotation, DeltaTime, RotationInterpSpeed);
-	// 设置控制器旋转
-	SetControlRotation(LerpCurrentRotation);
+	if (IsGameplayInputBlocked()) return;
+	if (TargetLockComponent) TargetLockComponent->AddTargetSwitchInput(Value.Get<float>());
 }
 
 
 void AProjectPlayerController::OnAbilityInputStarted(const FGameplayTag AbilityTag)
 {
-	GetAbilitySystemComponent()->AbilityInputTagPressed(AbilityTag);
+	if (IsGameplayInputBlocked()) return;
+	if (UProjectAbilitySystemComponent* ASC = GetAbilitySystemComponent())
+	{
+		if (ASC->HasMatchingGameplayTag(FProjectGameplayTag::Get().Block_InputAction_Ability))
+		{
+			return;
+		}
+		ASC->AbilityInputTagPressed(AbilityTag);
+	}
 }
 
 void AProjectPlayerController::OnAbilityInputReleased(const FGameplayTag AbilityTag)
@@ -295,16 +342,69 @@ void AProjectPlayerController::OnAbilityInputReleased(const FGameplayTag Ability
 
 void AProjectPlayerController::OnAbilityInputTriggered(const FGameplayTag AbilityTag)
 {
-	GetAbilitySystemComponent()->AbilityInputTagHeld(AbilityTag);
+	if (IsGameplayInputBlocked()) return;
+	if (UProjectAbilitySystemComponent* ASC = GetAbilitySystemComponent())
+	{
+		if (ASC->HasMatchingGameplayTag(FProjectGameplayTag::Get().Block_InputAction_Ability))
+		{
+			return;
+		}
+		ASC->AbilityInputTagHeld(AbilityTag);
+	}
 }
 
 void AProjectPlayerController::OnAbilityJudgeStarted(const FGameplayTag JudgeTag)
 {
+	if (IsGameplayInputBlocked()) return;
+	if (UProjectAbilitySystemComponent* ASC = GetAbilitySystemComponent())
+	{
+		if (ASC->HasMatchingGameplayTag(FProjectGameplayTag::Get().Block_InputAction_Ability))
+		{
+			return;
+		}
+	}
+	else
+	{
+		return;
+	}
+
 	if (bCanPreInput)
 	{
 		AddAbilityTagToPreInput(JudgeTag);
 	}
 	GetAbilitySystemComponent()->AbilityJudgeTagPressed(JudgeTag);
+}
+
+bool AProjectPlayerController::IsGameplayInputBlocked() const
+{
+	const AProjectPlayerCharacter* ControlledCharacter = Cast<AProjectPlayerCharacter>(GetPawn());
+	return !IsValid(ControlledCharacter) || ControlledCharacter->bIsDead;
+}
+
+void AProjectPlayerController::RequestRestartGame()
+{
+	if (HasAuthority())
+	{
+		Server_RequestRestartGame_Implementation();
+	}
+	else
+	{
+		Server_RequestRestartGame();
+	}
+}
+
+void AProjectPlayerController::Server_RequestRestartGame_Implementation()
+{
+	const AProjectPlayerCharacter* DeadCharacter = Cast<AProjectPlayerCharacter>(GetPawn());
+	if (!IsValid(DeadCharacter) || !DeadCharacter->bIsDead)
+	{
+		return;
+	}
+
+	if (APlayGameModeBase* PlayGameMode = GetWorld()->GetAuthGameMode<APlayGameModeBase>())
+	{
+		PlayGameMode->RespawnDeadPlayer(this);
+	}
 }
 
 void AProjectPlayerController::OnAbilityJudgeReleased(const FGameplayTag JudgeTag)

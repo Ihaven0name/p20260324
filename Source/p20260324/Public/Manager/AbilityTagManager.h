@@ -1,21 +1,16 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "EditorSubsystem.h"
-#include "AbilityTagManager.generated.h"
 
 struct FAbilityTagConfig;
 
-UCLASS()
-class P20260324_API UAbilityTagManager : public UEditorSubsystem
+/** 能力标签 DataTable 的运行时查询与编辑器资产刷新工具。 */
+class FAbilityTagManager
 {
-	GENERATED_BODY()
 public:
-	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
-	virtual void Deinitialize() override;
+	static const FAbilityTagConfig* FindAbilityTagConfigByRowName(FName RowName);
 
-	void RefreshSingleAbilityTagInCDO(FName ChangedRowName);
-	static FAbilityTagConfig* FindAbilityTagConfigByRowName(FName RowName);
-	static TObjectPtr<UDataTable> AbilityTagConfigDataTable;
-	
+#if WITH_EDITOR
+	static void RefreshSingleAbilityTagInCDO(FName ChangedRowName);
+#endif
 };

@@ -1,13 +1,12 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-#include "GAS/MMC/MMC_Defense.h"
+#include "GAS/MMC/MMC_PlayerAttackPower.h"
 #include "Manager/ConfigManager.h"
 #include "GAS/ProjectAttributeSet.h"
 
-UMMC_Defense::UMMC_Defense()
+UMMC_PlayerAttackPower::UMMC_PlayerAttackPower()
 {
-	PlayerCategory = TEXT("Empty");
-	AttributeRowName = TEXT("Defense");
+	AttributeRowName = TEXT("AttackPower");
 
 	LevelCaptureDef.AttributeToCapture = UProjectAttributeSet::GetLevelAttribute();
 	LevelCaptureDef.AttributeSource = EGameplayEffectAttributeCaptureSource::Target;
@@ -15,7 +14,7 @@ UMMC_Defense::UMMC_Defense()
 	RelevantAttributesToCapture.Add(LevelCaptureDef);
 }
 
-float UMMC_Defense::CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const
+float UMMC_PlayerAttackPower::CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const
 {
 	const FGameplayTagContainer* SourceTags = Spec.CapturedSourceTags.GetAggregatedTags();
 	const FGameplayTagContainer* TargetTags = Spec.CapturedTargetTags.GetAggregatedTags();
@@ -37,10 +36,11 @@ float UMMC_Defense::CalculateBaseMagnitude_Implementation(const FGameplayEffectS
 	UConfigManager* CM = World->GetGameInstance()->GetSubsystem<UConfigManager>();
 	if (!CM) return 0.f;
 
-	UCurveTable* CurveTable = CM->GetCurveTableByRowName(PlayerCategory);
+	const FString CategoryName = StaticEnum<EPlayerCategory>()->GetNameStringByValue(static_cast<int64>(PlayerCategory));
+	UCurveTable* CurveTable = CM->GetPlayerCurveTableByRowName(FName(*CategoryName));
 	if (!CurveTable) return 0.f;
 
-	FRealCurve* RealCurve = CurveTable->FindCurve(AttributeRowName, TEXT("UMMC_Defense"));
+	FRealCurve* RealCurve = CurveTable->FindCurve(AttributeRowName, TEXT("UMMC_PlayerAttackPower"));
 	if (!RealCurve) return 0.f;
 
 	return RealCurve->Eval(Level);

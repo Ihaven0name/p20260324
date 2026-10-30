@@ -1,12 +1,10 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+#include "GAS/MMC/MMC_EnemyMaxMana.h"
 
-#include "GAS/MMC/MMC_MaxMana.h"
-#include "Manager/ConfigManager.h"
 #include "GAS/ProjectAttributeSet.h"
+#include "Manager/ConfigManager.h"
 
-UMMC_MaxMana::UMMC_MaxMana()
+UMMC_EnemyMaxMana::UMMC_EnemyMaxMana()
 {
-	PlayerCategory = TEXT("Empty");
 	AttributeRowName = TEXT("MaxMana");
 
 	LevelCaptureDef.AttributeToCapture = UProjectAttributeSet::GetLevelAttribute();
@@ -15,33 +13,30 @@ UMMC_MaxMana::UMMC_MaxMana()
 	RelevantAttributesToCapture.Add(LevelCaptureDef);
 }
 
-float UMMC_MaxMana::CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const
+float UMMC_EnemyMaxMana::CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const
 {
 	const FGameplayTagContainer* SourceTags = Spec.CapturedSourceTags.GetAggregatedTags();
 	const FGameplayTagContainer* TargetTags = Spec.CapturedTargetTags.GetAggregatedTags();
-
 	FAggregatorEvaluateParameters EvaluateParams;
 	EvaluateParams.SourceTags = SourceTags;
 	EvaluateParams.TargetTags = TargetTags;
 
 	float Level = 0.f;
 	GetCapturedAttributeMagnitude(LevelCaptureDef, Spec, EvaluateParams, Level);
-
 	if (Level <= 0.f) return 0.f;
 
 	AActor* AvatarActor = Cast<AActor>(Spec.GetEffectContext().GetSourceObject());
 	if (!AvatarActor) return 0.f;
 	UWorld* World = AvatarActor->GetWorld();
-	if (!World) return 0.f;
+	if (!World || !World->GetGameInstance()) return 0.f;
 
-	UConfigManager* CM = World->GetGameInstance()->GetSubsystem<UConfigManager>();
-	if (!CM) return 0.f;
+	UConfigManager* ConfigManager = World->GetGameInstance()->GetSubsystem<UConfigManager>();
+	if (!ConfigManager) return 0.f;
 
-	UCurveTable* CurveTable = CM->GetCurveTableByRowName(PlayerCategory);
+	const FString CategoryName = StaticEnum<EEnemyCategory>()->GetNameStringByValue(static_cast<int64>(EnemyCategory));
+	UCurveTable* CurveTable = ConfigManager->GetEnemyCurveTableByRowName(FName(*CategoryName));
 	if (!CurveTable) return 0.f;
 
-	FRealCurve* RealCurve = CurveTable->FindCurve(AttributeRowName, TEXT("UMMC_MaxMana"));
-	if (!RealCurve) return 0.f;
-
-	return RealCurve->Eval(Level);
+	const FRealCurve* RealCurve = CurveTable->FindCurve(AttributeRowName, TEXT("UMMC_EnemyMaxMana"));
+	return RealCurve ? RealCurve->Eval(Level) : 0.f;
 }

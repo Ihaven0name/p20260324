@@ -68,8 +68,7 @@ void UGameplayAbilityBase::ActivateAbility(
 
 bool UGameplayAbilityBase::InitializeTags()
 {
-	
-	const FAbilityTagConfig* Config = UAbilityTagManager::FindAbilityTagConfigByRowName(AbilityTagName);
+	const FAbilityTagConfig* Config = FAbilityTagManager::FindAbilityTagConfigByRowName(AbilityTagName);
 	if (!Config)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("[%s] Failed to find AbilityTagConfig for RowName: %s"), *GetName(), *AbilityTagName.ToString());

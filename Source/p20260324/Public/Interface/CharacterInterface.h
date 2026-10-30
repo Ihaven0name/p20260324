@@ -5,7 +5,17 @@
 #include "CharacterInterface.generated.h"
 
 class UProjectAbilitySystemComponent;
+class UAnimMontage;
 struct FGameplayTagContainer;
+
+UENUM(BlueprintType)
+enum class EHitReactDirection : uint8
+{
+	Front,
+	Back,
+	Left,
+	Right
+};
 
 UINTERFACE(MinimalAPI)
 class UCharacterInterface : public UInterface
@@ -35,6 +45,14 @@ public:
 	
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Anim")
 	UProjectAbilitySystemComponent* GetAbilitySystemComponentByInterface();
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Anim|Hit React")
+	UAnimMontage* GetHitReactMontage(EHitReactDirection Direction);
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Anim|Death")
+	UAnimMontage* GetDeathMontage();
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Character|Death")
+	bool IsDead() const;
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Character|Death")
+	void SetIsDead();
 	//添加InputWindowTimer,如果已经有了Timer，先进行清除，并且进行清理InputWindow对应的标签，给BaseCharacter里面的InputWindowTimerHandle进行赋值
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Anim")
 	void AddInputWindowTimer(const float InRate,const FGameplayTagContainer& InTags);

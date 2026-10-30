@@ -7,10 +7,16 @@ void UConfigManager::Initialize(FSubsystemCollectionBase& Collection)
 {
 	Super::Initialize(Collection);
 
-	// 加载 CurveTable DataTable
-	if (!BasedCurveDataTable)
+	// 加载玩家属性曲线配置
+	if (!PlayerBasedCurveDataTable)
 	{
-		BasedCurveDataTable = LoadObject<UDataTable>(nullptr, TEXT("/Game/Blueprint/DataTable/DT_Based_Curve.DT_Based_Curve"));
+		PlayerBasedCurveDataTable = LoadObject<UDataTable>(nullptr, TEXT("/Game/Blueprint/DataTable/DT_PlayerBased_Curve.DT_PlayerBased_Curve"));
+	}
+
+	// 加载敌人属性曲线配置
+	if (!EnemyBasedCurveDataTable)
+	{
+		EnemyBasedCurveDataTable = LoadObject<UDataTable>(nullptr, TEXT("/Game/Blueprint/DataTable/DT_EnemyBased_Curve.DT_EnemyBased_Curve"));
 	}
 
 	//加载玩家经验曲线
@@ -62,12 +68,19 @@ void UConfigManager::Initialize(FSubsystemCollectionBase& Collection)
 	}
 }
 
-UCurveTable* UConfigManager::GetCurveTableByRowName(FName RowName) const
+UCurveTable* UConfigManager::GetPlayerCurveTableByRowName(FName RowName) const
 {
-	if (!BasedCurveDataTable) return nullptr;
+	if (!PlayerBasedCurveDataTable) return nullptr;
 
-	const FMMCDataTable* Row = BasedCurveDataTable->FindRow<FMMCDataTable>(RowName, nullptr);
+	const FMMCDataTable* Row = PlayerBasedCurveDataTable->FindRow<FMMCDataTable>(RowName, nullptr);
 	
+	return Row ? Row->CurveTable : nullptr;
+}
+UCurveTable* UConfigManager::GetEnemyCurveTableByRowName(FName RowName) const
+{
+	if (!EnemyBasedCurveDataTable) return nullptr;
+
+	const FMMCDataTable* Row = EnemyBasedCurveDataTable->FindRow<FMMCDataTable>(RowName, nullptr);
 	return Row ? Row->CurveTable : nullptr;
 }
 

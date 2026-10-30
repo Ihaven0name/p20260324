@@ -4,23 +4,24 @@
 
 #include "CoreMinimal.h"
 #include "GameplayModMagnitudeCalculation.h"
-#include "MMC_MaxMana.generated.h"
+#include "Info/CharacterInfo.h"
+#include "MMC_PlayerAttackPower.generated.h"
 
 /**
- * UMMC_MaxMana
+ * UMMC_PlayerAttackPower
  * 
  * 两层查表：PlayerCategory → CurveTable → AttributeRowName → 曲线值
  */
 UCLASS(Blueprintable)
-class P20260324_API UMMC_MaxMana : public UGameplayModMagnitudeCalculation
+class P20260324_API UMMC_PlayerAttackPower : public UGameplayModMagnitudeCalculation
 {
 	GENERATED_BODY()
 	
 public:
-	UMMC_MaxMana();
+	UMMC_PlayerAttackPower();
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MMC")
-	FName PlayerCategory;
+	EPlayerCategory PlayerCategory = EPlayerCategory::Empty;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MMC")
 	FName AttributeRowName;

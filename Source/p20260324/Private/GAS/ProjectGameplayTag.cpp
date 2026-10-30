@@ -125,8 +125,10 @@ void FProjectGameplayTag::InitGameplayTags()
 	GameplayTags.Ability_Offensive_Crouch_Attack_NormalAttack_Combo3 = AddTag(Manager, "Ability.Offensive.Crouch.Attack.NormalAttack.Combo3", "蹲下普通攻击连段3");
 	GameplayTags.Ability_Offensive_Crouch_Attack_NormalAttack_Combo4 = AddTag(Manager, "Ability.Offensive.Crouch.Attack.NormalAttack.Combo4", "蹲下普通攻击连段4");
 	GameplayTags.Ability_Offensive_Crouch_Attack_HeavyAttack_Combo1 = AddTag(Manager, "Ability.Offensive.Crouch.Attack.HeavyAttack.Combo1", "重攻击连段1");
+	GameplayTags.Ability_Offensive_Wraith_Attack_NormalAttack_Shoot = AddTag(Manager, "Ability.Offensive.Wraith.Attack.NormalAttack.Shoot", "Wraith普通攻击射击");
 	GameplayTags.Ability_Offensive_Crouch_Skill_Dash = AddTag(Manager, "Ability.Offensive.Crouch.Skill.Dash", "蹲下技能-冲刺");
 	GameplayTags.Ability_Offensive_Crouch_Roll=AddTag(Manager,"Ability.Offensive.Crouch.Roll","进行翻滚，可以实现闪避");
+	GameplayTags.Ability_HitReact = AddTag(Manager, "Ability.HitReact", "受击反应技能");
 
 	// Passive 父标签（用于区分主动/被动技能）
 	GameplayTags.Ability_Passive = AddTag(Manager, "Ability.Passive", "被动技能");
@@ -209,6 +211,13 @@ void FProjectGameplayTag::InitGameplayTags()
 	// Event - 动画发送事件标签
 	// ==========================================
 	GameplayTags.Event_Crouch_Dash_AddLaunch = AddTag(Manager, "Event.Crouch.Dash.AddLaunch", "Dash的时候添加向前的推力");
+	GameplayTags.Event_Wraith_Shoot = AddTag(Manager, "Event.Wraith.Shoot", "Wraith射击事件");
+	GameplayTags.Event_Combat_HitReact = AddTag(Manager, "Event.Combat.HitReact", "受击反应事件");
+
+	// ==========================================
+	// Status - 持续状态
+	// ==========================================
+	GameplayTags.Status_Stun = AddTag(Manager, "Status.Stun", "眩晕状态");
 
 	// ==========================================
 	// UI - 界面标签
@@ -219,6 +228,7 @@ void FProjectGameplayTag::InitGameplayTags()
 
 	// --- Widgets ---
 	GameplayTags.UI_Widget_MainAttack = AddTag(Manager, "UI.Widget.MainAttack", "Main Attack Widget");
+	GameplayTags.UI_Widget_MainAttack_Death = AddTag(Manager, "UI.Widget.MainAttack.Death", "Player death screen");
 	GameplayTags.UI_Widget_Attribute = AddTag(Manager, "UI.Widget.Attribute", "Attribute Widget");
 	GameplayTags.UI_Widget_Setting = AddTag(Manager, "UI.Widget.Setting", "Setting Widget");
 	GameplayTags.UI_Widget_Setting_SettingPanel = AddTag(Manager, "UI.Widget.Setting.SettingPanel", "Setting Panel Widget");

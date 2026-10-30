@@ -24,17 +24,30 @@ void AProjectPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& 
 
 AProjectPlayerCharacter* AProjectPlayerState::AddTeamInfo(FGameplayTag CharacterTag, FVector Location, FRotator Rotation)
 {
-	if (!HasAuthority()) return nullptr;
-	if (TeamArray.Num() >= TeamBound) return nullptr;
+
+	if (!HasAuthority())
+	{
+		return nullptr;
+	}
+	if (TeamArray.Num() >= TeamBound)
+	{
+		return nullptr;
+	}
 	for (FTeamCharacterInfo& TempTeamCharacterInfo : TeamArray)
 	{
-		if (TempTeamCharacterInfo.CharacterTag.MatchesTagExact(CharacterTag)) return nullptr;
+		if (TempTeamCharacterInfo.CharacterTag.MatchesTagExact(CharacterTag))
+		{
+			return nullptr;
+		}
 	}
 	UConfigManager* ConfigManager = UProjectBlueprintFunctionLibrary::GetConfigManager(this);
 	UCharacterInfo* CharacterInfo = ConfigManager->GetCharacterInfo();
 	UTeamInfo* TeamInfo = ConfigManager->GetTeamInfo();
 	TSubclassOf<AProjectPlayerCharacter> CharacterClass;
-	if (!CharacterInfo->FindCharacterClassByTag(CharacterTag,CharacterClass)) return nullptr;
+	if (!CharacterInfo->FindCharacterClassByTag(CharacterTag,CharacterClass))
+	{
+		return nullptr;
+	}
 	FActorSpawnParameters Params;
 	Params.Owner = GetPlayerController();
 
@@ -58,4 +71,30 @@ AProjectPlayerCharacter* AProjectPlayerState::AddTeamInfo(FGameplayTag Character
 		return NewCharacter;
 	}
 	return nullptr;
+}
+
+bool AProjectPlayerState::ReplaceTeamCharacter(AProjectPlayerCharacter* OldCharacter, AProjectPlayerCharacter* NewCharacter)
+{
+	if (!HasAuthority() || !IsValid(OldCharacter) || !IsValid(NewCharacter))
+	{
+		return false;
+	}
+
+	for (int32 Index = 0; Index < TeamArray.Num(); ++Index)
+	{
+		FTeamCharacterInfo& TeamCharacter = TeamArray[Index];
+		if (TeamCharacter.Character == OldCharacter)
+		{
+			TeamCharacter.Character = NewCharacter;
+			TeamCharacter.AbilitySystemComponent = NewCharacter->GetAbilitySystemComponent();
+			TeamCharacter.AttributeSet = NewCharacter->GetAttributeSet();
+			ControlledCharacterIndex = Index;
+			MARK_PROPERTY_DIRTY_FROM_NAME(AProjectPlayerState, TeamArray, this);
+			MARK_PROPERTY_DIRTY_FROM_NAME(AProjectPlayerState, ControlledCharacterIndex, this);
+			ForceNetUpdate();
+			return true;
+		}
+	}
+
+	return false;
 }

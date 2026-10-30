@@ -11,24 +11,73 @@
 
 void UMainAttackUIWidgetController::BindCallback()
 {
-	WidgetControllerParam.AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UProjectAttributeSet::GetHealthAttribute()).AddLambda([this](const FOnAttributeChangeData& Data)
+	Super::BindCallback();
+	BindAttributeDelegates();
+}
+
+void UMainAttackUIWidgetController::BindAttributeDelegates()
+{
+	UProjectAbilitySystemComponent* AbilitySystemComponent = WidgetControllerParam.AbilitySystemComponent;
+	if (!IsValid(AbilitySystemComponent))
+	{
+		return;
+	}
+
+	BoundAbilitySystemComponent = AbilitySystemComponent;
+	HealthDelegateHandle = AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UProjectAttributeSet::GetHealthAttribute()).AddLambda([this](const FOnAttributeChangeData& Data)
 	{
 		OnHealthChangeSignature.Broadcast(Data.NewValue);
 	});
-	WidgetControllerParam.AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UProjectAttributeSet::GetManaAttribute()).AddLambda([this](const FOnAttributeChangeData& Data)
+	ManaDelegateHandle = AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UProjectAttributeSet::GetManaAttribute()).AddLambda([this](const FOnAttributeChangeData& Data)
 	{
 		OnManaChangeSignature.Broadcast(Data.NewValue);
 	});
-	WidgetControllerParam.AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UProjectAttributeSet::GetMaxHealthAttribute()).AddLambda([this](const FOnAttributeChangeData& Data)
+	MaxHealthDelegateHandle = AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UProjectAttributeSet::GetMaxHealthAttribute()).AddLambda([this](const FOnAttributeChangeData& Data)
 	{
 		OnMaxHealthChangeSignature.Broadcast(Data.NewValue);
 	});
-	WidgetControllerParam.AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UProjectAttributeSet::GetMaxManaAttribute()).AddLambda([this](const FOnAttributeChangeData& Data)
+	MaxManaDelegateHandle = AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UProjectAttributeSet::GetMaxManaAttribute()).AddLambda([this](const FOnAttributeChangeData& Data)
 	{
 		OnMaxManaChangeSignature.Broadcast(Data.NewValue);
 	});
-	
-	OnChangeWidgetControllerParamSignature.AddDynamic(this,&ThisClass::OnChangeWidgetControllerParamFunction);
+}
+
+void UMainAttackUIWidgetController::UnbindAttributeDelegates()
+{
+	if (UProjectAbilitySystemComponent* AbilitySystemComponent = BoundAbilitySystemComponent.Get())
+	{
+		AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UProjectAttributeSet::GetHealthAttribute()).Remove(HealthDelegateHandle);
+		AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UProjectAttributeSet::GetManaAttribute()).Remove(ManaDelegateHandle);
+		AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UProjectAttributeSet::GetMaxHealthAttribute()).Remove(MaxHealthDelegateHandle);
+		AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UProjectAttributeSet::GetMaxManaAttribute()).Remove(MaxManaDelegateHandle);
+	}
+
+	BoundAbilitySystemComponent.Reset();
+	HealthDelegateHandle.Reset();
+	ManaDelegateHandle.Reset();
+	MaxHealthDelegateHandle.Reset();
+	MaxManaDelegateHandle.Reset();
+}
+
+void UMainAttackUIWidgetController::OnChangeWidgetControllerParamFunction()
+{
+	UnbindAttributeDelegates();
+	Super::OnChangeWidgetControllerParamFunction();
+	BindAttributeDelegates();
+	BroadcastInitialAttribute();
+}
+
+void UMainAttackUIWidgetController::BroadcastInitialAttribute() const
+{
+	if (!WidgetControllerParam.AttributeSet)
+	{
+		return;
+	}
+
+	OnHealthChangeSignature.Broadcast(WidgetControllerParam.AttributeSet->GetHealth());
+	OnManaChangeSignature.Broadcast(WidgetControllerParam.AttributeSet->GetMana());
+	OnMaxHealthChangeSignature.Broadcast(WidgetControllerParam.AttributeSet->GetMaxHealth());
+	OnMaxManaChangeSignature.Broadcast(WidgetControllerParam.AttributeSet->GetMaxMana());
 }
 
 

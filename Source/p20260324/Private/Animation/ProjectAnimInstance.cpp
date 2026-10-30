@@ -3,6 +3,18 @@
 #include "Animation/ProjectAnimInstance.h"
 #include "Components/SkeletalMeshComponent.h"
 
+void UProjectAnimInstance::StartTurnToTarget(const float SignedRotationSpeed)
+{
+	TurnToTargetRotationSpeed = SignedRotationSpeed;
+	bIsTurningToTarget = true;
+}
+
+void UProjectAnimInstance::StopTurnToTarget()
+{
+	bIsTurningToTarget = false;
+	TurnToTargetRotationSpeed = 0.0f;
+}
+
 UProjectAnimInstance* UProjectAnimInstance::GetMainAnimInstance(const UAnimInstance* LayerAnimInstance)
 {
 	if (!LayerAnimInstance)

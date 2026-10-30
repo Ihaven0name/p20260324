@@ -1,6 +1,12 @@
 #include "ProjectGameInstance.h"
 
 #include "GAS/ProjectGameplayTag.h"
+#include "Manager/AccountManager.h"
+
+UAccountManager* UProjectGameInstance::GetAccountManager() const
+{
+	return GetSubsystem<UAccountManager>();
+}
 
 FString UProjectGameInstance::GetSaveSlotName(const EProjectSaveSlotName InSaveSlotName)
 {

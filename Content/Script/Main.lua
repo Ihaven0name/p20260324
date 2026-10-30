@@ -8,6 +8,6 @@ WidgetClassMap = {
 
 
 require("LuaPanda").start("127.0.0.1",8818)
-package.cpath = package.cpath .. ';C:/Users/76334/AppData/Roaming/JetBrains/Rider2024.3/plugins/EmmyLua/debugger/emmy/windows/x64/?.dll'
+package.cpath = package.cpath .. ';D:/JetBrain_Files/Rider2024.3/config/plugins/EmmyLua/debugger/emmy/windows/x64/?.dll'
 local dbg = require('emmy_core')
 dbg.tcpListen('localhost', 9966)

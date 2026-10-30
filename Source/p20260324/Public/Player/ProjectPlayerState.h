@@ -51,5 +51,6 @@ public:
 		FGameplayTag CharacterTag,
 		FVector Location = FVector::ZeroVector,
 		FRotator Rotation = FRotator::ZeroRotator);
+	bool ReplaceTeamCharacter(AProjectPlayerCharacter* OldCharacter, AProjectPlayerCharacter* NewCharacter);
 	
 };

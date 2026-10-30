@@ -27,6 +27,7 @@ function M:Construct()
     self.bGrayIsActive = false
     self.bRedInterp = false
     self.bRedDelayActive = false
+    self.bHasInitializedHealthPercent = false
     self.enemyCharacter = nil
     self.TimerHandle=nil
 end
@@ -55,27 +56,57 @@ function M:AfterSetWidgetController()
         self.enemyCharacter = wc:Cast(UE.AEnemyCharacter)
     end
 
+    if not self.enemyCharacter then
+        return
+    end
+
     -- 绑定委托（函数引用格式）
     self.enemyCharacter.OnEnemyHealthPercentChanged:Remove(self, self.OnEnemyHealthPercentChangedFunction)
     self.enemyCharacter.OnEnemyHealthPercentChanged:Add(self, self.OnEnemyHealthPercentChangedFunction)
-    -- 初始化血量显示
-    self:OnEnemyHealthPercentChangedFunction(1.0)
+
+    local attributeSet = self.enemyCharacter:GetAttributeSet()
+    if attributeSet then
+        local maxHealth = attributeSet:GetMaxHealthValueForLua()
+        local health = attributeSet:GetHealthValueForLua()
+        local percent = maxHealth > 0.0 and health / maxHealth or 0.0
+        self:OnEnemyHealthPercentChangedFunction(percent)
+    end
 end
 
 --- 血量百分比变化回调
 ---@param NewPercent number 新的血量百分比 (0~1)
 function M:OnEnemyHealthPercentChangedFunction(NewPercent)
+	NewPercent = math.max(0.0, math.min(NewPercent, 1.0))
+
+	-- The first valid replicated snapshot initializes all bars without playing a recovery animation.
+	if not self.bHasInitializedHealthPercent then
+		if NewPercent <= 0.0 then
+			return
+		end
+
+		self:ClearTimer()
+		self.ProgressBar_Green:SetPercent(NewPercent)
+		self.ProgressBar_Red:SetPercent(NewPercent)
+		self.ProgressBar_Gray:SetPercent(NewPercent)
+		self.ProgressBar_Gray:SetRenderOpacity(1.0)
+		self.targetPercent = NewPercent
+		self.pendingTargetPercent = NewPercent
+		self.bRedInterp = false
+		self.bRedDelayActive = false
+		self.bHasInitializedHealthPercent = true
+		return
+	end
 
     if NewPercent >= self.ProgressBar_Green.Percent then
         -- ========== 恢复生命 ==========
-        self.ClearTimer()
+        self:ClearTimer()
         self.bRedDelayActive = false
         self.bRedInterp = false
 
         self.ProgressBar_Gray:SetPercent(NewPercent)
         self.ProgressBar_Red:SetPercent(NewPercent)
         self.targetPercent = NewPercent
-        if bRedInterp then
+        if self.bRedInterp then
             self.bRedInterp = false
             self.ProgressBar_Gray:SetRenderOpacity(1.0)
         end
@@ -112,12 +143,10 @@ function M:SetTimer()
 end
 
 function M:ClearTimer()
-    if self then
-        if (self.TimerHandle == nil) then
-            UE.UKismetSystemLibrary.K2_ClearAndInvalidateTimerHandle(self,self.TimerHandle)
-        end
+    if self.TimerHandle ~= nil then
+        UE.UKismetSystemLibrary.K2_ClearAndInvalidateTimerHandle(self, self.TimerHandle)
+        self.TimerHandle = nil
     end
-    
 end
 
 function M:OnRedDelayEndFunction()

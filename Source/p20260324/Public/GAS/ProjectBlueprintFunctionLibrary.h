@@ -87,6 +87,10 @@ public:
 	UFUNCTION(BlueprintCallable)
 	static AActor* FindNearestActor(const AActor* OriginalActor, const TArray<AActor*>& TargetActors);
 
+	/** 仅允许 Player 与 Enemy 两个阵营互相命中。 */
+	UFUNCTION(BlueprintPure, Category = "Combat")
+	static bool CanAttackByFactionNames(FName AttackerFaction, FName TargetFaction);
+
 	/**
 	 * 根据AbilityTag检查对应的Ability是否能激活
 	 * @param ASC AbilitySystemComponent指针

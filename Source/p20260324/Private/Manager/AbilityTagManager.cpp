@@ -1,25 +1,32 @@
 #include "Manager/AbilityTagManager.h"
 
+#include "Engine/DataTable.h"
+#include "Info/AbilityInfo.h"
+
+#if WITH_EDITOR
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "Engine/Blueprint.h"
 #include "GAS/GA/GameplayAbilityBase.h"
 #include "Kismet2/BlueprintEditorUtils.h"
 #include "Misc/PackageName.h"
 #include "Modules/ModuleManager.h"
+#endif
 
-TObjectPtr<UDataTable> UAbilityTagManager::AbilityTagConfigDataTable;
-void UAbilityTagManager::Initialize(FSubsystemCollectionBase& Collection)
+const FAbilityTagConfig* FAbilityTagManager::FindAbilityTagConfigByRowName(const FName RowName)
 {
-	Super::Initialize(Collection);
-	AbilityTagConfigDataTable=LoadObject<UDataTable>(nullptr, TEXT("/Game/Blueprint/DataTable/DT_AbilityTagConfig.DT_AbilityTagConfig"));
+	UDataTable* AbilityTagConfigDataTable = LoadObject<UDataTable>(
+		nullptr,
+		TEXT("/Game/Blueprint/DataTable/DT_AbilityTagConfig.DT_AbilityTagConfig"));
+	if (!IsValid(AbilityTagConfigDataTable))
+	{
+		return nullptr;
+	}
+
+	return AbilityTagConfigDataTable->FindRow<FAbilityTagConfig>(RowName, nullptr);
 }
 
-void UAbilityTagManager::Deinitialize()
-{
-	Super::Deinitialize();
-}
-
-void UAbilityTagManager::RefreshSingleAbilityTagInCDO(FName ChangedRowName)
+#if WITH_EDITOR
+void FAbilityTagManager::RefreshSingleAbilityTagInCDO(const FName ChangedRowName)
 {
 	if (ChangedRowName.IsNone())
 	{
@@ -79,12 +86,7 @@ void UAbilityTagManager::RefreshSingleAbilityTagInCDO(FName ChangedRowName)
 		}
 
 		UGameplayAbilityBase* CDO = Cast<UGameplayAbilityBase>(Class->GetDefaultObject());
-		if (!CDO)
-		{
-			continue;
-		}
-
-		if (CDO->AbilityTagName != ChangedRowName)
+		if (!CDO || CDO->AbilityTagName != ChangedRowName)
 		{
 			continue;
 		}
@@ -97,11 +99,4 @@ void UAbilityTagManager::RefreshSingleAbilityTagInCDO(FName ChangedRowName)
 		break;
 	}
 }
-FAbilityTagConfig* UAbilityTagManager::FindAbilityTagConfigByRowName(FName RowName)
-{
-	if (IsValid(AbilityTagConfigDataTable))
-	{
-		return AbilityTagConfigDataTable->FindRow<FAbilityTagConfig>(RowName, nullptr);
-	}
-	return nullptr;
-}
+#endif

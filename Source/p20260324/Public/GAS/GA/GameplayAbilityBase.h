@@ -13,13 +13,6 @@ class P20260324_API UGameplayAbilityBase : public UGameplayAbility
 	GENERATED_BODY()
 public:
 	UGameplayAbilityBase();
-	/** 攻击蒙太奇 */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Config")
-	TObjectPtr<UAnimMontage> AbilityMontage;
-	/** 攻击音效 */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Config")
-	TObjectPtr<USoundBase> AbilitySound;
-
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Config")
 	FName AbilityTagName;
 

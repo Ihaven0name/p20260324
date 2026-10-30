@@ -13,15 +13,15 @@ struct FDamageEffectParam
 	FDamageEffectParam(){};
 
 	
-	UPROPERTY(EditAnywhere,BlueprintReadWrite)
+	UPROPERTY()
 	TObjectPtr<UObject> WorldContextObject=nullptr;
 	UPROPERTY(EditAnywhere,BlueprintReadWrite)
 	TSubclassOf<UGameplayEffect> DamageEffectClass=nullptr;
-	UPROPERTY(EditAnywhere,BlueprintReadWrite)
+	UPROPERTY()
 	TObjectPtr<UAbilitySystemComponent> SourceAbilitySystemComponent=nullptr;
-	UPROPERTY(EditAnywhere,BlueprintReadWrite)
+	UPROPERTY()
 	TObjectPtr<UAbilitySystemComponent> TargetAbilitySystemComponent=nullptr;
-	UPROPERTY(EditAnywhere,BlueprintReadWrite)
+	UPROPERTY()
 	int32 AbilityLevel=1;
 	UPROPERTY(EditAnywhere,BlueprintReadWrite)
 	float DamageMultiplier=0.f;
@@ -35,7 +35,7 @@ struct FDamageEffectParam
 	float DebuffDamage=0.f;
 	UPROPERTY(EditAnywhere,BlueprintReadWrite)
 	float KnockBackChance=0.f;
-	UPROPERTY(EditAnywhere,BlueprintReadWrite)
+	UPROPERTY()
 	FVector KnockBackImpulse=FVector::ZeroVector;
 };
 

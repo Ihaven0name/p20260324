@@ -3,6 +3,7 @@
 #include "AbilitySystemBlueprintLibrary.h"
 #include "GAS/ProjectAbilitySystemComponent.h"
 #include "GAS/ProjectAttributeSet.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "Net/UnrealNetwork.h"
 
 AProjectBaseCharacter::AProjectBaseCharacter()
@@ -13,7 +14,13 @@ AProjectBaseCharacter::AProjectBaseCharacter()
 void AProjectBaseCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	// 复制属性由服务器计算；AnimBP 在线程安全更新中只读取这些值。
+	if (HasAuthority())
+	{
+		OnCharacterMovementUpdated.AddDynamic(this, &ThisClass::UpdateMovementStateFromCMC);
+		UpdateMovementStateFromCMC(0.0f, GetActorLocation(), GetVelocity());
+	}
 }
 
 void AProjectBaseCharacter::Tick(float DeltaTime)
@@ -27,6 +34,61 @@ void AProjectBaseCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(AProjectBaseCharacter, Level);
 	DOREPLIFETIME(AProjectBaseCharacter, XP);
+	DOREPLIFETIME(AProjectBaseCharacter, HasVelocity);
+	DOREPLIFETIME(AProjectBaseCharacter, HasAcceleration);
+	DOREPLIFETIME(AProjectBaseCharacter, bIsDead);
+}
+
+void AProjectBaseCharacter::SetIsDead_Implementation()
+{
+	if (!HasAuthority() || bIsDead)
+	{
+		return;
+	}
+
+	bIsDead = true;
+	OnDeathStateChanged();
+	OnCharacterDied.Broadcast(this);
+	ForceNetUpdate();
+}
+
+void AProjectBaseCharacter::OnRep_IsDead()
+{
+	if (bIsDead)
+	{
+		OnDeathStateChanged();
+	}
+}
+
+void AProjectBaseCharacter::OnDeathStateChanged()
+{
+}
+
+void AProjectBaseCharacter::UpdateMovementStateFromCMC(const float DeltaSeconds, const FVector OldLocation, const FVector OldVelocity)
+{
+	if (!HasAuthority())
+	{
+		return;
+	}
+
+	const UCharacterMovementComponent* MovementComponent = GetCharacterMovement();
+	if (!MovementComponent)
+	{
+		return;
+	}
+
+	// 使用一个很小的阈值屏蔽浮点噪声，避免状态在零附近反复切换。
+	constexpr float MovementThreshold = 1.0f;
+	const float ThresholdSquared = FMath::Square(MovementThreshold);
+	const bool bNewHasVelocity = MovementComponent->Velocity.SizeSquared() > ThresholdSquared;
+	const bool bNewHasAcceleration = MovementComponent->GetCurrentAcceleration().SizeSquared() > ThresholdSquared;
+
+	if (HasVelocity != bNewHasVelocity || HasAcceleration != bNewHasAcceleration)
+	{
+		HasVelocity = bNewHasVelocity;
+		HasAcceleration = bNewHasAcceleration;
+		ForceNetUpdate();
+	}
 }
 
 // ============ IPlayerInterface ============
@@ -67,6 +129,28 @@ UProjectAbilitySystemComponent* AProjectBaseCharacter::GetAbilitySystemComponent
 {
 	return GetAbilitySystemComponent();
 	
+}
+
+UAnimMontage* AProjectBaseCharacter::GetHitReactMontage_Implementation(const EHitReactDirection Direction)
+{
+	switch (Direction)
+	{
+	case EHitReactDirection::Front:
+		return FrontHitReactMontage;
+	case EHitReactDirection::Back:
+		return BackHitReactMontage;
+	case EHitReactDirection::Left:
+		return LeftHitReactMontage;
+	case EHitReactDirection::Right:
+		return RightHitReactMontage;
+	default:
+		return nullptr;
+	}
+}
+
+UAnimMontage* AProjectBaseCharacter::GetDeathMontage_Implementation()
+{
+	return DeathMontage;
 }
 
 void AProjectBaseCharacter::AddInputWindowTimer_Implementation(const float InRate, const FGameplayTagContainer& InTags)

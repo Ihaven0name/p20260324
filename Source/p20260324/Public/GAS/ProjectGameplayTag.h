@@ -188,6 +188,10 @@ struct FProjectGameplayTag
 	UPROPERTY(EditDefaultsOnly, Category = "Ability")
 	FGameplayTag Ability_Offensive_Crouch_Roll;
 	UPROPERTY(EditDefaultsOnly, Category = "Ability")
+	FGameplayTag Ability_Offensive_Wraith_Attack_NormalAttack_Shoot;
+	UPROPERTY(EditDefaultsOnly, Category = "Ability")
+	FGameplayTag Ability_HitReact;
+	UPROPERTY(EditDefaultsOnly, Category = "Ability")
 	FGameplayTag Ability_Passive;
 
 	// ==========================================
@@ -301,6 +305,16 @@ struct FProjectGameplayTag
 	// ==========================================
 	UPROPERTY(EditDefaultsOnly, Category = "Event")
 	FGameplayTag Event_Crouch_Dash_AddLaunch;
+	UPROPERTY(EditDefaultsOnly, Category = "Event")
+	FGameplayTag Event_Wraith_Shoot;
+	UPROPERTY(EditDefaultsOnly, Category = "Event")
+	FGameplayTag Event_Combat_HitReact;
+
+	// ==========================================
+	// Status
+	// ==========================================
+	UPROPERTY(EditDefaultsOnly, Category = "Status")
+	FGameplayTag Status_Stun;
 
 	// ==========================================
 	// UI
@@ -311,6 +325,8 @@ struct FProjectGameplayTag
 	FGameplayTag UI_Layer_Prompt;
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	FGameplayTag UI_Widget_MainAttack;
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	FGameplayTag UI_Widget_MainAttack_Death;
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	FGameplayTag UI_Widget_Attribute;
 	UPROPERTY(EditDefaultsOnly, Category = "UI")

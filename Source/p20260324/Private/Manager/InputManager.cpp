@@ -25,6 +25,7 @@ void UInputManager::Initialize(FSubsystemCollectionBase& Collection)
 	CachedInputInfo = ConfigManager ? ConfigManager->GetInputInfo() : nullptr;
 	LoadedMappableKeySetting = nullptr;
 	CachedEnhancedInputLocalPlayerSubsystem.Reset();
+	
 	RuntimeMappedKeyIndexMap.Empty();
 }
 

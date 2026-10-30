@@ -1,7 +1,9 @@
 #include "Info/AbilityInfo.h"
 
+#if WITH_EDITOR
 #include "Editor.h"
 #include "Manager/AbilityTagManager.h"
+#endif
 #include "p20260324/LogChannel.h"
 
 //FAbilityTagConfig
@@ -15,10 +17,7 @@ void FAbilityTagConfig::OnDataTableChanged(const UDataTable* InDataTable, const 
 		return;
 	}
 
-	if (UAbilityTagManager* AbilityTagManager = GEditor->GetEditorSubsystem<UAbilityTagManager>())
-	{
-		AbilityTagManager->RefreshSingleAbilityTagInCDO(InRowName);
-	}
+	FAbilityTagManager::RefreshSingleAbilityTagInCDO(InRowName);
 #endif
 }
 

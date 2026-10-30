@@ -8,7 +8,7 @@ public class p20260324 : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore","GameplayTags","GameplayTasks","GameplayAbilities", "EnhancedInput","Lua","UnLua" ,"LuaFrameWork", "CommonUI","CommonInput","NetCore", "Slate", "SlateCore" });
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore","GameplayTags","GameplayTasks","GameplayAbilities", "EnhancedInput","Lua","UnLua" ,"LuaFrameWork", "CommonUI","CommonInput","NetCore", "Slate", "SlateCore", "AIModule", "HTTP", "Json", "JsonUtilities" });
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
 
@@ -20,8 +20,7 @@ public class p20260324 : ModuleRules
 		// Uncomment if you are using Slate UI
 		// PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });
 		
-		// Uncomment if you are using online features
-		// PrivateDependencyModuleNames.Add("OnlineSubsystem");
+		// 注册账号走自定义 HTTP API；不依赖 OnlineSubsystem。
 
 		// To include OnlineSubsystemSteam, add it to the plugins section in your uproject file with the Enabled attribute set to true
 	}

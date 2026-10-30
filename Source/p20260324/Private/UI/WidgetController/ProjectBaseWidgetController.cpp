@@ -3,7 +3,6 @@
 #include "AbilitySystemBlueprintLibrary.h"
 #include "CommonInputSettings.h"
 #include "UnLuaEx.h"
-#include "VREditorMode.h"
 #include "GAS/ProjectAbilitySystemComponent.h"
 #include "GAS/ProjectAttributeSet.h"
 #include "GAS/ProjectBlueprintFunctionLibrary.h"

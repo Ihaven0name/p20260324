@@ -51,6 +51,10 @@ end
 
 function M:AfterSetWidgetController()
     self.MainWidgetUIWidgetController = self:GetWidgetController()
+    if self.WBP_PlayerHealth and self.MainWidgetUIWidgetController then
+        self.WBP_PlayerHealth:SetWidgetController(self.MainWidgetUIWidgetController)
+    end
+
     self.TagToFunction =
     {
         [Tags.UI_Action_MainAttack_AddAttributeUI] =

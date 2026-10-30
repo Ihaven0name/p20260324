@@ -42,12 +42,16 @@ public:
 
 	
 	/**
-	 * 根据 RowName 获取对应的 CurveTable
-	 * @param RowName - DT_Based_Curve 中的行名称（如 "Crouch"）
+	 * 根据玩家分类行名获取对应的 CurveTable
+	 * @param RowName - PlayerBasedCurveDataTable 中的行名称（如 "Crouch"）
 	 * @return 找到的 CurveTable，未找到返回 nullptr
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Config")
-	UCurveTable* GetCurveTableByRowName(FName RowName) const;
+	UCurveTable* GetPlayerCurveTableByRowName(FName RowName) const;
+
+	/** 根据敌人分类行名获取对应的 CurveTable。 */
+	UFUNCTION(BlueprintCallable, Category = "Config")
+	UCurveTable* GetEnemyCurveTableByRowName(FName RowName) const;
 
 
 	UFUNCTION(BlueprintCallable, Category = "Config")
@@ -81,9 +85,13 @@ public:
 	
 
 private:
-	/** 引用全局曲线配置 DataTable */
+	/** 玩家分类到属性曲线表的映射。 */
 	UPROPERTY(EditAnywhere, Category = "Config|Curve")
-	TObjectPtr<UDataTable> BasedCurveDataTable;
+	TObjectPtr<UDataTable> PlayerBasedCurveDataTable;
+
+	/** 敌人分类到属性曲线表的映射。 */
+	UPROPERTY(EditAnywhere, Category = "Config|Curve")
+	TObjectPtr<UDataTable> EnemyBasedCurveDataTable;
 
 	// /** 引用 Ability Tag 配置 DataTable */
 	UPROPERTY(EditAnywhere, Category = "Config|Curve")

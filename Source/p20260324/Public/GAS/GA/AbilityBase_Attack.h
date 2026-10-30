@@ -12,6 +12,13 @@ class P20260324_API UAbilityBase_Attack : public UGameplayAbilityBase
 public:
 	UAbilityBase_Attack();
 
+	/** 攻击蒙太奇 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Config")
+	TObjectPtr<UAnimMontage> AbilityMontage;
+	/** 攻击音效 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Config")
+	TObjectPtr<USoundBase> AbilitySound;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FDamageEffectParam DefaultDamageEffectParam;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)

@@ -52,7 +52,7 @@ AActor* UEnemyManager::SpawnEnemy(UObject* WorldContextObject, TSubclassOf<AActo
 
 void UEnemyManager::AddEnemy(AActor* Enemy)
 {
-	if (Enemy)
+	if (IsValid(Enemy) && !SpawnedEnemies.Contains(Enemy))
 	{
 		SpawnedEnemies.Add(Enemy);
 	}

@@ -14,7 +14,19 @@ class P20260324_API UMainAttackUIWidgetController : public USingleControlWidgetC
 	GENERATED_BODY()
 public:
 	virtual void BindCallback() override;
+	virtual void OnChangeWidgetControllerParamFunction() override;
+	virtual void BroadcastInitialAttribute() const override;
 	UFUNCTION(BlueprintCallable, Category = "Character")
 	void RequestCharacterSwitch(int32 TargetIndex) const;
-	
+
+	void UnbindAttributeDelegates();
+
+private:
+	void BindAttributeDelegates();
+
+	TWeakObjectPtr<UProjectAbilitySystemComponent> BoundAbilitySystemComponent;
+	FDelegateHandle HealthDelegateHandle;
+	FDelegateHandle ManaDelegateHandle;
+	FDelegateHandle MaxHealthDelegateHandle;
+	FDelegateHandle MaxManaDelegateHandle;
 };

@@ -6,9 +6,34 @@
 #include "GameplayAbilitySpec.h"
 #include "GAS/GA/AbilityBase_Attack.h"
 #include "GAS/ProjectBlueprintFunctionLibrary.h"
+#include "Interface/EnemyInterface.h"
+#include "Interface/PlayerInterface.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "DrawDebugHelpers.h"
 #include "Components/CapsuleComponent.h"
+
+namespace
+{
+	FName GetCombatFactionName(const AActor* Actor)
+	{
+		if (!IsValid(Actor))
+		{
+			return NAME_None;
+		}
+
+		if (Actor->GetClass()->ImplementsInterface(UPlayerInterface::StaticClass()))
+		{
+			return FName(TEXT("Player"));
+		}
+
+		if (Actor->GetClass()->ImplementsInterface(UEnemyInterface::StaticClass()))
+		{
+			return FName(TEXT("Enemy"));
+		}
+
+		return NAME_None;
+	}
+}
 
 void UAnimNotifyState_SphereOverlap::NotifyBegin(
 	USkeletalMeshComponent* MeshComp,
@@ -47,6 +72,8 @@ void UAnimNotifyState_SphereOverlap::NotifyTick(
 	AActor* Owner = MeshComp->GetOwner();
 	if (!Owner||!Owner->GetInstigatorController()) return;
 	if (!Owner->Implements<UCharacterInterface>()) return;
+	const FName AttackerFaction = GetCombatFactionName(Owner);
+	if (AttackerFaction.IsNone()) return;
 
 	USkeletalMeshComponent* ActiveMesh = MeshComp;
 
@@ -98,6 +125,12 @@ void UAnimNotifyState_SphereOverlap::NotifyTick(
 		for (AActor* HitActor : TickOverlappingActors)
 		{
 			if (!IsValid(HitActor)) continue;
+			const FName TargetFaction = GetCombatFactionName(HitActor);
+			if (!UProjectBlueprintFunctionLibrary::CanAttackByFactionNames(AttackerFaction, TargetFaction))
+			{
+				continue;
+			}
+
 			AlreadyHitActors.Add(HitActor);
 			if (AttackAbility->bOverrideKnockBack)
 			{

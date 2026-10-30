@@ -12,6 +12,7 @@ void UProjectAbilitySystemComponent::GiveAbilitiesFromInputInfo()
 {
 	UConfigManager* ConfigManager = GetWorld()->GetGameInstance()->GetSubsystem<UConfigManager>();
 	if (!ConfigManager || !ConfigManager->GetInputInfo()) return;
+	
 
 	for (const TTuple<EPlayerCategory, FInputSetting>& TempMap : ConfigManager->GetInputInfo()->PlayerCategoryToInputSetting)
 	{

@@ -7,6 +7,7 @@
 
 class UAbilityInfo;
 class UCharacterInfo;
+class UAccountManager;
 
 UENUM(BlueprintType)
 enum class EProjectSaveSlotName : uint8
@@ -20,6 +21,10 @@ class P20260324_API UProjectGameInstance : public UGameInstance
 	GENERATED_BODY()
 public:
 	virtual void Init() override;
+
+	/** 获取账号管理 Subsystem，供蓝图登录界面调用。 */
+	UFUNCTION(BlueprintPure, Category="账号服务")
+	UAccountManager* GetAccountManager() const;
 
 	UFUNCTION(BlueprintPure, Category="Save")
 	static FString GetSaveSlotName(EProjectSaveSlotName InSaveSlotName);

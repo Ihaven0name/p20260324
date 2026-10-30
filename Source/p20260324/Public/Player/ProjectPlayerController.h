@@ -15,6 +15,8 @@ class UProjectGameInstance;
 struct FInputActionValue;
 class UProjectAbilitySystemComponent;
 class UInputAction;
+class UTargetLockComponent;
+class UEnemyVisibilityComponent;
 
 UCLASS()
 class P20260324_API AProjectPlayerController : public APlayerController
@@ -26,10 +28,11 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void OnPossess(APawn* InPawn) override;
+	virtual void OnRep_Pawn() override;
 
 	
 	virtual void SetupInputComponent() override;
-	virtual void PlayerTick(float DeltaTime) override;
 public:
 	UPROPERTY()
 	TObjectPtr<UProjectAbilitySystemComponent> AbilitySystemComponent;
@@ -39,15 +42,11 @@ public:
 	TObjectPtr<AProjectPlayerCharacter> PlayerCharacter;
 	UPROPERTY()
 	TObjectPtr<AProjectAttackHUD> ProjectHUD;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="组件", meta=(AllowPrivateAccess="true"))
+	TObjectPtr<UTargetLockComponent> TargetLockComponent;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="组件", meta=(AllowPrivateAccess="true"))
+	TObjectPtr<UEnemyVisibilityComponent> EnemyVisibilityComponent;
 
-	UPROPERTY(BlueprintReadWrite)
-	bool bIsLocking=false;
-	//TODO:需要在怪物四的时候移出LockingActor
-	UPROPERTY(BlueprintReadWrite)
-	TObjectPtr<AActor> LockingActor=nullptr;
-	UPROPERTY(BlueprintReadWrite)
-	float SwitchTargetNumber=0.f;
-	
 	// ==================== 预输入相关 ====================
 	// 预输入是否可用（由 Ability 在合适时机设置，如攻击动画开始时）
 	UPROPERTY(BlueprintReadWrite)
@@ -61,30 +60,12 @@ public:
 	bool FindActivatableAbilityTag();
 	// ==================== 预输入相关 ====================
 
-	UPROPERTY(EditDefaultsOnly, Category="LockOn")
-	float MaxLockDistance = 1500.0f;  // 最大锁定距离
-	UPROPERTY(EditDefaultsOnly, Category="LockOn")
-	float MaxLockAngle = 60.0f;  // 扇形角度
-	UPROPERTY(EditDefaultsOnly, Category="LockOn")
-	float MouseDecaySpeed = 8.0f;  // 鼠标累计值衰减速度
-	UPROPERTY(EditDefaultsOnly, Category="LockSwitch")
-	float SwitchTargetThreshold=500.f;
-	UPROPERTY(EditDefaultsOnly, Category="LockSwitch")
-	float LockOnPitchRadius=-20.f;
-	
-	// 锁定时的插值相关变量
-	UPROPERTY()
-	FRotator LerpCurrentRotation;  // 当前插值的旋转
-	UPROPERTY(EditDefaultsOnly, Category="LockOn")
-	float RotationInterpSpeed = 10.0f;  // 旋转插值速度
-	
-	
 	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category="InputAction")
 	TObjectPtr<UInputAction> MoveAction;
 	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category="InputAction")
 	TObjectPtr<UInputAction> LookAction;
 	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category="InputAction")
-	TObjectPtr<UInputAction> SpringArmScaleAction;
+	TObjectPtr<UInputAction> WheelAction;
 	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category="InputAction")
 	TObjectPtr<UInputAction> JumpAction;
 	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category="InputAction")
@@ -126,11 +107,15 @@ public:
 	AProjectPlayerCharacter* GetPlayerCharacter();
 	UFUNCTION(BlueprintCallable)
 	AProjectAttackHUD* GetProjectHUD();
+	UFUNCTION(BlueprintPure, Category="组件")
+	UTargetLockComponent* GetTargetLockComponent() const { return TargetLockComponent; }
+	UFUNCTION(BlueprintPure, Category="组件")
+	UEnemyVisibilityComponent* GetEnemyVisibilityComponent() const { return EnemyVisibilityComponent; }
 
 	
 	void MoveActionFunction(const FInputActionValue& Value);
 	void LookActionFunction(const FInputActionValue& Value);
-	void SpringArmScaleActionFunction(const FInputActionValue& Value);
+	void WheelActionFunction(const FInputActionValue& Value);
 	void JumpActionFunction(const FInputActionValue& Value);
 	void LockOnActionFunction(const FInputActionValue& Value);
 	void LockSwitchActionFunction(const FInputActionValue& Value);
@@ -153,17 +138,19 @@ public:
 	 */
 	void OnAbilityJudgeReleased(const FGameplayTag JudgeTag);
 
-	/**
-	 * 更新锁定时的旋转插值
-	 * @param DeltaTime 时间增量
-	 */
-	UFUNCTION(BlueprintCallable)
-	void UpdateLockOnRotationInterpolation(float DeltaTime);
-
-
 	UFUNCTION(Server, Reliable)
 	void Server_SwitchCharacter(int32 TargetIndex);
-	
+
+	/** 本地死亡界面的重开请求；实际重载由服务器执行。 */
+	UFUNCTION(BlueprintCallable, Category = "Game")
+	void RequestRestartGame();
+
+	UFUNCTION(Server, Reliable)
+	void Server_RequestRestartGame();
+	void RefreshMainAttackUIWidgetController();
+
+private:
+	bool IsGameplayInputBlocked() const;
 };
 
 

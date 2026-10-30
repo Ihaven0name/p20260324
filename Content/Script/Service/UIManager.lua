@@ -11,11 +11,6 @@ end
 
 function UIManager:LuaOnWorldBeginPlay(InWorld)
     print("UIManager:LuaOnWorldBeginPlay")
-    local worldName = UE.UKismetSystemLibrary.GetObjectName(InWorld)
-    if worldName == "Demo" then
-        local path = '/Game/UI/UIBP/Login/WBP_LoginView.WBP_LoginView_C'
-        self:OpenWidgetByPath(path, "Login")
-    end
 end
 
 function UIManager:OpenWidgetByPath(Path, Name)

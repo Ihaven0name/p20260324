@@ -26,11 +26,12 @@ enum class EPlayerCategory
 // ==========================================
 // Enemy Category（怪物分类）
 // ==========================================
-UENUM()
+UENUM(BlueprintType)
 enum class EEnemyCategory
 {
 	Empty,	// 默认空
-	Test	// 测试用怪物
+	Test,	// 测试用怪物
+	Wraith
 };
 
 
