@@ -53,6 +53,8 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	const TMap<FGameplayTag, int32>& GetItemQuantityMap() const;
+	/** Replaces the local UI inventory mirror with the owning player's replicated inventory. */
+	void SyncFromAuthoritativeInventory(const TArray<FInventoryItem>& Items);
 
 	UFUNCTION(BlueprintCallable)
 	UInventoryInfo* GetInventoryInfo();

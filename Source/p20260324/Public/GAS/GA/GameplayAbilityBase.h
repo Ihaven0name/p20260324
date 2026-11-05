@@ -42,6 +42,10 @@ public:
 	void RemoveMontageTagAndEndAbility();
 
 protected:
+	/** Input-window tags are checked on the locally controlled client, not by the server's delayed activation RPC. */
+	UPROPERTY()
+	FGameplayTagContainer LocalInputWindowRequiredTags;
+
 	/** 重写：在父类检查之后，追加 OR 条件标签判断 */
 	virtual bool CanActivateAbility(const FGameplayAbilitySpecHandle Handle,
 		const FGameplayAbilityActorInfo* ActorInfo,

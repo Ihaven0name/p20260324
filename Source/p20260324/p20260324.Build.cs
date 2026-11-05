@@ -10,7 +10,7 @@ public class p20260324 : ModuleRules
 	
 		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore","GameplayTags","GameplayTasks","GameplayAbilities", "EnhancedInput","Lua","UnLua" ,"LuaFrameWork", "CommonUI","CommonInput","NetCore", "Slate", "SlateCore", "AIModule", "HTTP", "Json", "JsonUtilities" });
 
-		PrivateDependencyModuleNames.AddRange(new string[] {  });
+		PrivateDependencyModuleNames.AddRange(new string[] { "ApplicationCore" });
 
 		if (Target.bBuildEditor)
 		{

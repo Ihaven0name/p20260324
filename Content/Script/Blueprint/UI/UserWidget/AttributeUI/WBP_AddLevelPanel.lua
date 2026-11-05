@@ -37,17 +37,7 @@ function M:AfterSetWidgetController()
 end
 
 function M:BeforeNativeOnDeactivated()
-    ---@type FProjectAttributeInfo
-    local LevelAttributeInfo=UE.FProjectAttributeInfo()
-    LevelAttributeInfo.AttributeValue = self.AttributeWidgetController.WidgetControllerParam.AttributeSet:GetLevelValueForLua()
-    LevelAttributeInfo.AttributeTag=Tags.Attribute_Primary_Level
-
-    ---@type FProjectAttributeInfo
-    local XPAttributeInfo=UE.FProjectAttributeInfo()
-    XPAttributeInfo.AttributeValue = self.AttributeWidgetController.WidgetControllerParam.AttributeSet:GetXPValueForLua()
-    XPAttributeInfo.AttributeTag=Tags.Attribute_Primary_XP
-    self.AttributeWidgetController.OnAttributeChangeSignature:Broadcast(LevelAttributeInfo)
-    self.AttributeWidgetController.OnAttributeChangeSignature:Broadcast(XPAttributeInfo)
+    self.AttributeWidgetController:BroadcastInitialAttribute()
 end
 
 function M:OnClicked_ThreeXPMaterial()

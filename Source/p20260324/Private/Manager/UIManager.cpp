@@ -16,12 +16,29 @@ class UInventoryUIWidgetController;
 void UUIManager::AddMainUI()
 {
 	const UConfigManager* ConfigManager = UProjectBlueprintFunctionLibrary::GetConfigManager(GetLocalPlayer());
-	TSubclassOf<UProjectMainUIUserWidget>& WidgetClass = ConfigManager->GetWidgetInfo()->MainUIClass;
+	if (!ConfigManager)
+	{
+		return;
+	}
+
+	const UWidgetInfo* WidgetInfo = ConfigManager->GetWidgetInfo();
+	if (!WidgetInfo)
+	{
+		return;
+	}
+
+	const TSubclassOf<UProjectMainUIUserWidget> WidgetClass = WidgetInfo->MainUIClass;
 	if (!WidgetClass)
 	{
-		UE_LOG(LogTemp,Warning,TEXT("In UIManager,MainUIClass Is Not Valid"));
+		return;
 	}
-	MainUIWidget=CreateWidget<UProjectMainUIUserWidget>(GetWorld(), WidgetClass);
+
+	MainUIWidget = CreateWidget<UProjectMainUIUserWidget>(GetWorld(), WidgetClass);
+	if (!IsValid(MainUIWidget.Get()))
+	{
+		return;
+	}
+
 	MainUIWidget->AddToViewport();
 }
 
@@ -103,7 +120,7 @@ T* UUIManager::GetOrCreateWidgetController(const FGameplayTag WidgetTag, AProjec
 				NewBase->InitWidgetController(PlayerController);
 				if (T* SpecificController = Cast<T>(NewBase))
 				{
-					ControllerTagToWidgetController.Add(WidgetTag, SpecificController);
+					ControllerTagToWidgetController.Add(WidgetProperty.ControllerTag, SpecificController);
 					SpecificController->BindCallback();
 					return SpecificController;
 				}
@@ -132,18 +149,44 @@ UCommonActivatableWidgetStack* UUIManager::GetCommonStackByStackLayerTag(const F
 
 UCommonActivatableWidget* UUIManager::PushWidget(const FGameplayTag WidgetTag)
 {
-	if (!WidgetTag.IsValid()) return nullptr;
-	const UConfigManager* ConfigManager = UProjectBlueprintFunctionLibrary::GetConfigManager(GetLocalPlayer());
-	const UWidgetInfo* WidgetInfo = ConfigManager->GetWidgetInfo();
-	const FWidgetProperty* WidgetProperty = WidgetInfo->WidgetTagToWidgetProperty.Find(WidgetTag);
-	if (!WidgetProperty) return nullptr;
-	if (!IsValid(MainUIWidget.Get()))
+	if (!WidgetTag.IsValid())
 	{
-		UE_LOG(LogTemp,Warning,TEXT("In UIManager,MainUI Is Not Valid"));
 		return nullptr;
 	}
-	UCommonActivatableWidgetStack* Stack= GetCommonStackByStackLayerTag(WidgetProperty->StackLayerTag);
-	if (!Stack)  return nullptr;
+
+	const UConfigManager* ConfigManager = UProjectBlueprintFunctionLibrary::GetConfigManager(GetLocalPlayer());
+	if (!ConfigManager)
+	{
+		return nullptr;
+	}
+
+	const UWidgetInfo* WidgetInfo = ConfigManager->GetWidgetInfo();
+	if (!WidgetInfo)
+	{
+		return nullptr;
+	}
+
+	const FWidgetProperty* WidgetProperty = WidgetInfo->WidgetTagToWidgetProperty.Find(WidgetTag);
+	if (!WidgetProperty)
+	{
+		return nullptr;
+	}
+
+	if (!IsValid(MainUIWidget.Get()))
+	{
+		return nullptr;
+	}
+
+	UCommonActivatableWidgetStack* Stack = GetCommonStackByStackLayerTag(WidgetProperty->StackLayerTag);
+	if (!Stack)
+	{
+		return nullptr;
+	}
+	if (!WidgetProperty->WidgetClass)
+	{
+		return nullptr;
+	}
+
 	for (UCommonActivatableWidget* Widget : Stack->GetWidgetList())
 	{
 		if (Widget->GetClass()==WidgetProperty->WidgetClass)
@@ -152,35 +195,70 @@ UCommonActivatableWidget* UUIManager::PushWidget(const FGameplayTag WidgetTag)
 			break;
 		}
 	}
+
 	UCommonActivatableWidget* CommonActivatableWidget = Stack->AddWidget(WidgetProperty->WidgetClass);
-	UProjectCommonActivatableWidget* ProjectWidget=Cast<UProjectCommonActivatableWidget>(CommonActivatableWidget);
-	UProjectBaseWidgetController* WidgetController = UProjectBlueprintFunctionLibrary::GetWidgetControllerByWidgetTag(GetPlayerController(),WidgetTag);
+	if (!IsValid(CommonActivatableWidget))
+	{
+		return nullptr;
+	}
+
+	UProjectCommonActivatableWidget* ProjectWidget = Cast<UProjectCommonActivatableWidget>(CommonActivatableWidget);
+	if (!ProjectWidget)
+	{
+		return nullptr;
+	}
+
+	UProjectBaseWidgetController* WidgetController = UProjectBlueprintFunctionLibrary::GetWidgetControllerByWidgetTag(GetPlayerController(), WidgetTag);
+	if (!WidgetController)
+	{
+	}
 	ProjectWidget->SetWidgetController(WidgetController);
 	ProjectWidget->ActivateWidget();
-	UE_LOG(LogTemp, Warning, TEXT("Pushing Widget: %s"), *WidgetTag.ToString())
 	return ProjectWidget;
 }
 
 void UUIManager::PopWidget(const FGameplayTag WidgetTag)
 {
-	if (!WidgetTag.IsValid()) return;
-	const UConfigManager* ConfigManager = UProjectBlueprintFunctionLibrary::GetConfigManager(GetLocalPlayer());
-	const FWidgetProperty* WidgetProperty = ConfigManager->GetWidgetInfo()->WidgetTagToWidgetProperty.Find(WidgetTag);
-	if (!WidgetProperty) return;
-	if (!IsValid(MainUIWidget.Get()))
+	if (!WidgetTag.IsValid())
 	{
-		UE_LOG(LogTemp,Warning,TEXT("In UIManager,MainUI Is Not Valid"));
 		return;
 	}
-	UCommonActivatableWidgetStack* Stack= GetCommonStackByStackLayerTag(WidgetProperty->StackLayerTag);
-	if (Stack->GetActiveWidget())
+
+	const UConfigManager* ConfigManager = UProjectBlueprintFunctionLibrary::GetConfigManager(GetLocalPlayer());
+	if (!ConfigManager || !ConfigManager->GetWidgetInfo())
 	{
-		UProjectCommonActivatableWidget* CommonActivatableWidget=Cast<UProjectCommonActivatableWidget>(Stack->GetActiveWidget());
-		CommonActivatableWidget->DeactivateWidget();
+		return;
+	}
+
+	const FWidgetProperty* WidgetProperty = ConfigManager->GetWidgetInfo()->WidgetTagToWidgetProperty.Find(WidgetTag);
+	if (!WidgetProperty)
+	{
+		return;
+	}
+
+	if (!IsValid(MainUIWidget.Get()))
+	{
+		return;
+	}
+
+	UCommonActivatableWidgetStack* Stack = GetCommonStackByStackLayerTag(WidgetProperty->StackLayerTag);
+	if (!Stack)
+	{
+		return;
+	}
+
+	UCommonActivatableWidget* ActiveWidget = Stack->GetActiveWidget();
+	if (!ActiveWidget)
+	{
+		return;
+	}
+
+	if (UProjectCommonActivatableWidget* ProjectWidget = Cast<UProjectCommonActivatableWidget>(ActiveWidget))
+	{
+		ProjectWidget->DeactivateWidget();
 	}
 	else
 	{
-		UE_LOG(LogProject, Warning, TEXT("In UIManager,Cannot find Widget In Specific Stack"));
 	}
 }
 

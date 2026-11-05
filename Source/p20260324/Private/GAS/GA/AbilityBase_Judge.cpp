@@ -42,6 +42,7 @@ void UAbilityBase_Judge::OnGiveAbility(const FGameplayAbilityActorInfo* ActorInf
 
 void UAbilityBase_Judge::TryActivateAbilityFromJudge(const bool bIsShortPress)
 {
+	if (!IsLocallyControlled()) return;
 	UAbilitySystemComponent* ASC=GetAbilitySystemComponentFromActorInfo();
 	FGameplayAbilitySpec Spec;
 	if (bIsShortPress)

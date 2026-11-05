@@ -161,7 +161,7 @@ void AProjectBaseCharacter::AddInputWindowTimer_Implementation(const float InRat
 		RemoveInputWindowTags();
 	}
 	InputWindowTagContainer=InTags;
-	UAbilitySystemBlueprintLibrary::AddLooseGameplayTags(this,InputWindowTagContainer);
+	UAbilitySystemBlueprintLibrary::AddLooseGameplayTags(this, InputWindowTagContainer, HasAuthority());
 	GetWorld()->GetTimerManager().SetTimer(
 		InputWindowTimerHandle,
 		this,
@@ -185,7 +185,7 @@ void AProjectBaseCharacter::OnRep_XP(const int32 OldXP)
 
 void AProjectBaseCharacter::RemoveInputWindowTags()
 {
-	UAbilitySystemBlueprintLibrary::RemoveLooseGameplayTags(this,InputWindowTagContainer);
+	UAbilitySystemBlueprintLibrary::RemoveLooseGameplayTags(this, InputWindowTagContainer, HasAuthority());
 }
 
 UProjectAbilitySystemComponent* AProjectBaseCharacter::GetAbilitySystemComponent()

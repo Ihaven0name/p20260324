@@ -12,6 +12,7 @@
 #include "ProjectBlueprintFunctionLibrary.generated.h"
 
 class UTeamManager;
+class AProjectPlayerController;
 class AProjectPlayerCharacter;
 class UProjectAttributeSet;
 class UProjectBaseWidgetController;
@@ -55,6 +56,11 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Manager")
 	static UInventoryManager* GetInventoryManager(const UObject* WorldContext);
+
+	/** Routes a local debug inventory grant request to the owning server PlayerController. */
+	UFUNCTION(BlueprintCallable, Category="Project|Inventory|Debug", meta=(WorldContext="WorldContextObject"))
+	static bool RequestDebugGrantInventoryItem(const UObject* WorldContextObject, FGameplayTag ItemTag, int32 Count = 1);
+	static bool GrantInventoryItemToPlayer(AProjectPlayerController* PlayerController, FGameplayTag ItemTag, int32 Count);
 
 	UFUNCTION(BlueprintCallable, Category = "Manager")
 	static ULevelManager* GetLevelManager(const UObject* WorldContext);

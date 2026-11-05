@@ -14,6 +14,7 @@
 #include "Manager/ConfigManager.h"
 #include "PlayerMappableKeySettings.h"
 #include "ProjectGameInstance.h"
+#include "p20260324/LogChannel.h"
 
 void UInputManager::Initialize(FSubsystemCollectionBase& Collection)
 {
@@ -31,13 +32,30 @@ void UInputManager::Initialize(FSubsystemCollectionBase& Collection)
 
 bool UInputManager::InitializeMappableByPlayerController(APlayerController* InPlayerController)
 {
-	if (!InPlayerController) return false;
+	UE_LOG(LogProject, Warning, TEXT("[InputContext] Initialize requested PC=%s LocalPlayer=%s InputInfo=%s"),
+		*GetNameSafe(InPlayerController),
+		*GetNameSafe(InPlayerController ? InPlayerController->GetLocalPlayer() : nullptr),
+		*GetNameSafe(CachedInputInfo));
+	if (!InPlayerController)
+	{
+		UE_LOG(LogProject, Error, TEXT("[InputContext] Initialize failed: PlayerController is null"));
+		return false;
+	}
 
 	ULocalPlayer* LocalPlayer = InPlayerController->GetLocalPlayer();
-	if (!LocalPlayer) return false;
+	if (!LocalPlayer)
+	{
+		UE_LOG(LogProject, Error, TEXT("[InputContext] Initialize failed: no LocalPlayer for PC=%s"), *GetNameSafe(InPlayerController));
+		return false;
+	}
 
 	UEnhancedInputLocalPlayerSubsystem* EnhancedInputLocalPlayerSubsystem = LocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>();
-	if (!EnhancedInputLocalPlayerSubsystem || !CachedInputInfo) return false;
+	if (!EnhancedInputLocalPlayerSubsystem || !CachedInputInfo)
+	{
+		UE_LOG(LogProject, Error, TEXT("[InputContext] Initialize failed: EnhancedInputSubsystem=%s InputInfo=%s LocalPlayer=%s"),
+			*GetNameSafe(EnhancedInputLocalPlayerSubsystem), *GetNameSafe(CachedInputInfo), *GetNameSafe(LocalPlayer));
+		return false;
+	}
 
 	CachedEnhancedInputLocalPlayerSubsystem = EnhancedInputLocalPlayerSubsystem;
 
@@ -56,17 +74,32 @@ bool UInputManager::InitializeMappableByPlayerController(APlayerController* InPl
 	{
 		// 有存档时直接加载玩家保存的改键结果
 		LoadedMappableKeySetting = Cast<UProjectMappableKeySetting>(UGameplayStatics::LoadGameFromSlot(SaveSlotName, 0));
-		if (!LoadedMappableKeySetting) return false;
+		if (!LoadedMappableKeySetting)
+		{
+			UE_LOG(LogProject, Error, TEXT("[InputContext] Initialize failed: could not load key-mapping save Slot=%s"), *SaveSlotName);
+			return false;
+		}
 	}
 	else
 	{
 		// 首次进入游戏时，用默认 IMC 生成一份初始改键存档
 		LoadedMappableKeySetting = Cast<UProjectMappableKeySetting>(UGameplayStatics::CreateSaveGameObject(UProjectMappableKeySetting::StaticClass()));
-		if (!LoadedMappableKeySetting) return false;
-		if (!CreateMappableKeySlot()) return false;
+		if (!LoadedMappableKeySetting)
+		{
+			UE_LOG(LogProject, Error, TEXT("[InputContext] Initialize failed: could not create key-mapping save"));
+			return false;
+		}
+		if (!CreateMappableKeySlot())
+		{
+			UE_LOG(LogProject, Error, TEXT("[InputContext] Initialize failed: could not create initial key-mapping save Slot=%s"), *SaveSlotName);
+			return false;
+		}
 	}
 
-	return RebuildRuntimeInputContextsFromSaveData();
+	const bool bRebuilt = RebuildRuntimeInputContextsFromSaveData();
+	UE_LOG(LogProject, Warning, TEXT("[InputContext] Initialize finished Success=%d RuntimeContexts=%d"),
+		bRebuilt, IMCTagToMappedInputMappingContext.Num());
+	return bRebuilt;
 }
 
 bool UInputManager::GetCurrentKeysByGroupTag(
@@ -233,23 +266,61 @@ bool UInputManager::ClearKeyByGroupTagWithSlot(const FGameplayTag GroupTag, cons
 
 bool UInputManager::ActivateMappedInputMappingContextByTag(const FGameplayTag IMCTag, const int32 Priority)
 {
-	if (!CachedEnhancedInputLocalPlayerSubsystem.IsValid() || !IMCTag.IsValid()) return false;
+	if (!CachedEnhancedInputLocalPlayerSubsystem.IsValid() || !IMCTag.IsValid())
+	{
+		UE_LOG(LogProject, Error, TEXT("[InputContext] Activate failed: subsystem valid=%d tag valid=%d Tag=%s Priority=%d"),
+			CachedEnhancedInputLocalPlayerSubsystem.IsValid(), IMCTag.IsValid(), *IMCTag.ToString(), Priority);
+		return false;
+	}
 
 	const TObjectPtr<UInputMappingContext>* FoundInputMappingContext = IMCTagToMappedInputMappingContext.Find(IMCTag);
-	if (!FoundInputMappingContext || !(*FoundInputMappingContext)) return false;
+	if (!FoundInputMappingContext || !(*FoundInputMappingContext))
+	{
+		UE_LOG(LogProject, Error, TEXT("[InputContext] Activate failed: no runtime IMC for Tag=%s AvailableContexts=%d"),
+			*IMCTag.ToString(), IMCTagToMappedInputMappingContext.Num());
+		for (const TPair<FGameplayTag, TObjectPtr<UInputMappingContext>>& Pair : IMCTagToMappedInputMappingContext)
+		{
+			UE_LOG(LogProject, Warning, TEXT("[InputContext] Available IMC Tag=%s Asset=%s"),
+				*Pair.Key.ToString(), *GetNameSafe(Pair.Value));
+		}
+		return false;
+	}
 
-	CachedEnhancedInputLocalPlayerSubsystem->AddMappingContext(FoundInputMappingContext->Get(), Priority);
+	UInputMappingContext* InputMappingContext = FoundInputMappingContext->Get();
+	CachedEnhancedInputLocalPlayerSubsystem->AddMappingContext(InputMappingContext, Priority);
+	const TArray<FEnhancedActionKeyMapping>& Mappings = InputMappingContext->GetMappings();
+	UE_LOG(LogProject, Warning, TEXT("[InputContext] Activate requested Tag=%s IMC=%s Priority=%d MappingCount=%d"),
+		*IMCTag.ToString(), *GetNameSafe(InputMappingContext), Priority, Mappings.Num());
+	for (const FEnhancedActionKeyMapping& Mapping : Mappings)
+	{
+		if (Mapping.Action && Mapping.Action->GetName().Contains(TEXT("Open")))
+		{
+			UE_LOG(LogProject, Warning, TEXT("[InputContext] Open action mapping IMC=%s Action=%s Key=%s"),
+				*GetNameSafe(InputMappingContext), *GetNameSafe(Mapping.Action), *Mapping.Key.ToString());
+		}
+	}
 	return true;
 }
 
 bool UInputManager::DeactivateMappedInputMappingContextByTag(const FGameplayTag IMCTag)
 {
-	if (!CachedEnhancedInputLocalPlayerSubsystem.IsValid() || !IMCTag.IsValid()) return false;
+	if (!CachedEnhancedInputLocalPlayerSubsystem.IsValid() || !IMCTag.IsValid())
+	{
+		UE_LOG(LogProject, Error, TEXT("[InputContext] Deactivate failed: subsystem valid=%d tag valid=%d Tag=%s"),
+			CachedEnhancedInputLocalPlayerSubsystem.IsValid(), IMCTag.IsValid(), *IMCTag.ToString());
+		return false;
+	}
 
 	const TObjectPtr<UInputMappingContext>* FoundInputMappingContext = IMCTagToMappedInputMappingContext.Find(IMCTag);
-	if (!FoundInputMappingContext || !(*FoundInputMappingContext)) return false;
+	if (!FoundInputMappingContext || !(*FoundInputMappingContext))
+	{
+		UE_LOG(LogProject, Error, TEXT("[InputContext] Deactivate failed: no runtime IMC for Tag=%s"), *IMCTag.ToString());
+		return false;
+	}
 
 	CachedEnhancedInputLocalPlayerSubsystem->RemoveMappingContext(FoundInputMappingContext->Get());
+	UE_LOG(LogProject, Warning, TEXT("[InputContext] Deactivated Tag=%s IMC=%s"),
+		*IMCTag.ToString(), *GetNameSafe(FoundInputMappingContext->Get()));
 	return true;
 }
 
@@ -456,14 +527,24 @@ bool UInputManager::CreateMappableKeySlot()
 
 bool UInputManager::RebuildRuntimeInputContextsFromSaveData()
 {
-	if (!CachedInputInfo || !LoadedMappableKeySetting || !CachedEnhancedInputLocalPlayerSubsystem.IsValid()) return false;
+	if (!CachedInputInfo || !LoadedMappableKeySetting || !CachedEnhancedInputLocalPlayerSubsystem.IsValid())
+	{
+		UE_LOG(LogProject, Error, TEXT("[InputContext] Rebuild failed: InputInfo=%s SaveData=%s EnhancedInputSubsystemValid=%d"),
+			*GetNameSafe(CachedInputInfo), *GetNameSafe(LoadedMappableKeySetting), CachedEnhancedInputLocalPlayerSubsystem.IsValid());
+		return false;
+	}
 
 	RuntimeMappedKeyIndexMap.Empty();
+	UE_LOG(LogProject, Warning, TEXT("[InputContext] Rebuilding from save: ContextEntries=%d"), LoadedMappableKeySetting->TaggedOperationArgsArray.Num());
 
 	for (const FTaggedMapPlayerOperationArgs& TaggedOperationArgs : LoadedMappableKeySetting->TaggedOperationArgsArray)
 	{
 		if (!TaggedOperationArgs.IMCTag.IsValid()) continue;
-		if (!RebuildRuntimeInputContextByTag(TaggedOperationArgs.IMCTag)) return false;
+		if (!RebuildRuntimeInputContextByTag(TaggedOperationArgs.IMCTag))
+		{
+			UE_LOG(LogProject, Error, TEXT("[InputContext] Rebuild failed for Tag=%s"), *TaggedOperationArgs.IMCTag.ToString());
+			return false;
+		}
 	}
 
 	return true;

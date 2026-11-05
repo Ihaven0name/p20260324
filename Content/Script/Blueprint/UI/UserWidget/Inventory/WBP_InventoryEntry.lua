@@ -14,6 +14,7 @@ function M:Initialize(Initializer)
     self.InventoryWidgetController = nil
     ---@type UProjectInventoryItem
     self.CurrentItem = nil
+    self.bIsEmptySlot = false
 end
 
 function M:AfterSetWidgetController()
@@ -28,7 +29,8 @@ function M:OnListItemObjectSet(ListItemObject)
     if ProjectInventoryItem then
         local ConfigManager = UE.UProjectBlueprintFunctionLibrary.GetConfigManager(self)
         local InventoryInfo = ConfigManager:GetInventoryInfo()
-        if ProjectInventoryItem.ItemTag:MatchesTagExact(InventoryInfo.EmptyItemTag) then
+        self.bIsEmptySlot = ProjectInventoryItem.ItemTag:MatchesTagExact(InventoryInfo.EmptyItemTag)
+        if self.bIsEmptySlot then
             self:SetIsFocusable(false)
         else
             self:SetIsFocusable(true)
@@ -46,6 +48,11 @@ end
 
 function M:UpdateQuantityText(NewQuantity)
     self.TextBlock_OwnedNumber:SetText(tostring(NewQuantity))
+    if self.bIsEmptySlot then
+        self.TextBlock_OwnedNumber:SetVisibility(UE.ESlateVisibility.Hidden)
+    else
+        self.TextBlock_OwnedNumber:SetVisibility(UE.ESlateVisibility.Visible)
+    end
 end
 
 return M

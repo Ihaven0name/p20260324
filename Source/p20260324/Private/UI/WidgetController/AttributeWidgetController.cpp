@@ -10,6 +10,9 @@
 #include "Manager/UIManager.h"
 #include "p20260324/LogChannel.h"
 #include "Player/ProjectPlayerController.h"
+#include "Engine/CurveTable.h"
+#include "Interface/PlayerInterface.h"
+#include "Info/CharacterInfo.h"
 
 void UAttributeWidgetController::BindCallback()
 {
@@ -25,9 +28,9 @@ void UAttributeWidgetController::BindCallback()
 		});
 	}
 
-	OnChangeWidgetControllerParamSignature.AddDynamic(this,&ThisClass::OnChangeWidgetControllerParamFunction);
-	OnSelectXPElementsSignature.AddDynamic(this,&ThisClass::OnSelectXPElementsFunction);
-	OnAcceptXPElementsSignature.AddDynamic(this,&ThisClass::OnAcceptXPElementsFunction);
+	// SingleControlWidgetController already binds OnChangeWidgetControllerParamFunction.
+	OnSelectXPElementsSignature.AddUniqueDynamic(this,&ThisClass::OnSelectXPElementsFunction);
+	OnAcceptXPElementsSignature.AddUniqueDynamic(this,&ThisClass::OnAcceptXPElementsFunction);
 }
 
 void UAttributeWidgetController::BroadcastInitialAttribute() const
@@ -45,34 +48,13 @@ void UAttributeWidgetController::BroadcastInitialAttribute() const
 
 void UAttributeWidgetController::OnAcceptXPElementsFunction(const int32 SmallElement, const int32 MediumElement, const int32 LargeElement)
 {
-	if (UInventoryManager* InventoryManager=UProjectBlueprintFunctionLibrary::GetInventoryManager(PlayerController))
+	if (SmallElement < 0 || MediumElement < 0 || LargeElement < 0 ||
+		(SmallElement == 0 && MediumElement == 0 && LargeElement == 0) || !PlayerController)
 	{
-		const FProjectGameplayTag& ProjectGameplayTag=FProjectGameplayTag::Get();
-		if (LargeElement==0 && MediumElement==0 && SmallElement==0) return;
-		if (SmallElement!=0)
-			InventoryManager->RemoveItem(ProjectGameplayTag.Inventory_Material_Experience_Small,SmallElement);
-		if (MediumElement!=0)
-			InventoryManager->RemoveItem(ProjectGameplayTag.Inventory_Material_Experience_Medium,MediumElement);
-		if (LargeElement!=0)
-			InventoryManager->RemoveItem(ProjectGameplayTag.Inventory_Material_Experience_Large,LargeElement);
-		UProjectGameInstance* ProjectGameInstance=PlayerController->GetProjectGameInstance();
-		const UConfigManager* ConfigManager= ProjectGameInstance->GetSubsystem<UConfigManager>();
-		const int32 TempXP=
-			SmallElement*ProjectGameInstance->XPTagToXPValue[ProjectGameplayTag.Inventory_Material_Experience_Small]+
-			MediumElement*ProjectGameInstance->XPTagToXPValue[ProjectGameplayTag.Inventory_Material_Experience_Medium]+
-			LargeElement*ProjectGameInstance->XPTagToXPValue[ProjectGameplayTag.Inventory_Material_Experience_Large];
-		const UAttributeInfo* AttributeInfo=ConfigManager->GetAttributeInfo();
-		UProjectAbilitySystemComponent* ProjectAbilitySystemComponent=WidgetControllerParam.PlayerCharacter->GetAbilitySystemComponent();
-		FGameplayEffectContextHandle EffectContextHandle=ProjectAbilitySystemComponent->MakeEffectContext();
-		EffectContextHandle.AddSourceObject(WidgetControllerParam.PlayerCharacter);
-		FGameplayEffectSpecHandle EffectSpecHandle=ProjectAbilitySystemComponent->MakeOutgoingSpec(AttributeInfo->AddIncomingXPEffectClass,1.f,EffectContextHandle);
-		UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(EffectSpecHandle,ProjectGameplayTag.Attribute_Meta_IncomingXP,TempXP);
-		ProjectAbilitySystemComponent->ApplyGameplayEffectSpecToSelf(*EffectSpecHandle.Data.Get());
+		return;
 	}
-	else
-	{
-		UE_LOG(LogProject, Warning, TEXT("OnAcceptXPElementsFunction Not Found InventoryManager"));
-	}
+
+	PlayerController->RequestUpgradeWithExperienceMaterials(SmallElement, MediumElement, LargeElement);
 }
 
 void UAttributeWidgetController::OnSelectXPElementsFunction(const int32 SmallElement,const int32 MediumElement,const int32 LargeElement,bool& bCanApproachBound)
@@ -80,10 +62,7 @@ void UAttributeWidgetController::OnSelectXPElementsFunction(const int32 SmallEle
 	const FProjectGameplayTag& ProjectGameplayTag=FProjectGameplayTag::Get();
 	if (SmallElement==0 && MediumElement==0 && LargeElement==0)
 	{
-		const FProjectAttributeInfo LevelAttributeInfo=FProjectAttributeInfo(ProjectGameplayTag.Attribute_Primary_Level,WidgetControllerParam.AttributeSet->GetLevel());
-		const FProjectAttributeInfo XPAttributeInfo=FProjectAttributeInfo(ProjectGameplayTag.Attribute_Primary_XP,WidgetControllerParam.AttributeSet->GetXP()); 
-		OnAttributeChangeSignature.Broadcast(LevelAttributeInfo);
-		OnAttributeChangeSignature.Broadcast(XPAttributeInfo);
+		BroadcastInitialAttribute();
 		bCanApproachBound=false;
 		return;
 	}
@@ -96,6 +75,7 @@ void UAttributeWidgetController::OnSelectXPElementsFunction(const int32 SmallEle
 	int CalculateLevel=0;
 	int CalculateXP=0;
 	UProjectBlueprintFunctionLibrary::CalculateCurrentLevel(WidgetControllerParam.AttributeSet,TempXP,CalculateLevel,CalculateXP);
+	BroadcastInitialAttribute();
 	//可以到达经验上限
 	if (CalculateLevel==ConfigManager->PlayerLevelBound)
 	{
@@ -103,6 +83,32 @@ void UAttributeWidgetController::OnSelectXPElementsFunction(const int32 SmallEle
 	}
 	const FProjectAttributeInfo LevelAttributeInfo=FProjectAttributeInfo(ProjectGameplayTag.Attribute_Primary_Level,CalculateLevel);
 	OnAttributeChangeSignature.Broadcast(LevelAttributeInfo);
+
+	// Preview level-scaled values from the same category curves used by the player MMCs.
+	if (WidgetControllerParam.PlayerCharacter && WidgetControllerParam.PlayerCharacter->Implements<UPlayerInterface>())
+	{
+		const EPlayerCategory Category = IPlayerInterface::Execute_GetPlayerCategory(WidgetControllerParam.PlayerCharacter);
+		const FString CategoryName = StaticEnum<EPlayerCategory>()->GetNameStringByValue(static_cast<int64>(Category));
+		if (UCurveTable* CurveTable = ConfigManager->GetPlayerCurveTableByRowName(FName(*CategoryName)))
+		{
+			const TPair<FGameplayTag, FName> LevelScaledAttributes[] =
+			{
+				{ProjectGameplayTag.Attribute_Primary_MaxHealth, TEXT("MaxHealth")},
+				{ProjectGameplayTag.Attribute_Primary_MaxMana, TEXT("MaxMana")},
+				{ProjectGameplayTag.Attribute_Secondary_AttackPower, TEXT("AttackPower")},
+				{ProjectGameplayTag.Attribute_Secondary_Defense, TEXT("Defense")}
+			};
+
+			for (const TPair<FGameplayTag, FName>& Attribute : LevelScaledAttributes)
+			{
+				if (const FRealCurve* Curve = CurveTable->FindCurve(Attribute.Value, TEXT("Attribute level preview")))
+				{
+					OnAttributeChangeSignature.Broadcast(FProjectAttributeInfo(Attribute.Key, Curve->Eval(CalculateLevel)));
+				}
+			}
+		}
+	}
+
 	OnTemporaryLevelAndXPChangeSignature.Broadcast(CalculateLevel,CalculateXP);
 	bCanApproachBound=false;
 }
@@ -110,4 +116,4 @@ void UAttributeWidgetController::OnSelectXPElementsFunction(const int32 SmallEle
 void UAttributeWidgetController::RequestChangeSwitcherIndex(const int32 NewIndex)
 {
 	OnSwitcherIndexChangedSignature.Broadcast(NewIndex);
-} 
+}

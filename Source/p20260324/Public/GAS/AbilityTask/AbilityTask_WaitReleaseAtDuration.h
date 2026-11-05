@@ -27,6 +27,7 @@ public:
 	float StartTime=0.f;
 	UPROPERTY()
 	bool bTestInitialState=false;
+	bool bHasResolvedInput = false;
 	
     FDelegateHandle DelegateHandle;
 	FTimerHandle TimerHandle;
@@ -38,7 +39,5 @@ public:
 	bool RemoveEventAndClearTimer();
 	UFUNCTION()
 	void OnAtDurationEndFunction();
-	UFUNCTION(NetMulticast, Reliable)
-	void Multicast_OnDurationReached();
 	
 };

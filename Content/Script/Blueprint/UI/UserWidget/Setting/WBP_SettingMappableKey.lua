@@ -47,12 +47,12 @@ function M:AfterNativeOnActivated()
     for i = 1, self.OneSlotArray:Num() do
         ---@type WBP_MappableBehaviorOneSlot_C
         local Widget = self.OneSlotArray:Get(i)
-        Widget:ActivateWidget()
+        Widget:RefreshKeyDisplay()
     end
     for i = 1, self.TwoSlotArray:Num() do
         ---@type WBP_MappableBehaviorTwoSlot_C
         local Widget = self.TwoSlotArray:Get(i)
-        Widget:ActivateWidget()
+        Widget:RefreshKeyDisplay()
     end
 end
 

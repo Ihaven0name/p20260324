@@ -4,6 +4,7 @@
 #include "GameplayTagContainer.h"
 #include "GameFramework/PlayerState.h"
 #include "Info/TeamInfo.h"
+#include "Manager/InventoryManager.h"
 #include "ProjectPlayerState.generated.h"
 
 
@@ -43,8 +44,19 @@ public:
 	int32 ControlledCharacterIndex = 0;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite,Replicated)
 	TArray<FTeamCharacterInfo> TeamArray;
+	/** Server-owned inventory; replicated only to this player's connection. */
+	UPROPERTY(ReplicatedUsing=OnRep_InventoryItems, BlueprintReadOnly, Category="Inventory")
+	TArray<FInventoryItem> InventoryItems;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int32 TeamBound=3;
+
+	UFUNCTION(BlueprintCallable, Category="Inventory")
+	int32 GetInventoryItemQuantity(FGameplayTag ItemTag) const;
+	/** Server-side item grant entry point. */
+	UFUNCTION(BlueprintCallable, Category="Inventory")
+	bool AddInventoryItem(FGameplayTag ItemTag, int32 Count);
+	/** Atomically verifies and consumes the three XP material counts. */
+	bool ConsumeExperienceMaterials(int32 SmallCount, int32 MediumCount, int32 LargeCount);
 
 	UFUNCTION(BlueprintCallable)
 	AProjectPlayerCharacter* AddTeamInfo(
@@ -52,5 +64,7 @@ public:
 		FVector Location = FVector::ZeroVector,
 		FRotator Rotation = FRotator::ZeroRotator);
 	bool ReplaceTeamCharacter(AProjectPlayerCharacter* OldCharacter, AProjectPlayerCharacter* NewCharacter);
-	
+
+	UFUNCTION()
+	void OnRep_InventoryItems();
 };

@@ -116,6 +116,44 @@ UInventoryManager* UProjectBlueprintFunctionLibrary::GetInventoryManager(const U
 	return GI ? GI->GetSubsystem<UInventoryManager>() : nullptr;
 }
 
+bool UProjectBlueprintFunctionLibrary::RequestDebugGrantInventoryItem(
+	const UObject* WorldContextObject, const FGameplayTag ItemTag, const int32 Count)
+{
+	if (!WorldContextObject || !ItemTag.IsValid() || Count <= 0)
+	{
+		return false;
+	}
+
+	UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::ReturnNull);
+	AProjectPlayerController* PlayerController = World
+		? Cast<AProjectPlayerController>(UGameplayStatics::GetPlayerController(World, 0))
+		: nullptr;
+	if (!IsValid(PlayerController))
+	{
+		return false;
+	}
+
+	if (PlayerController->HasAuthority())
+	{
+		return GrantInventoryItemToPlayer(PlayerController, ItemTag, Count);
+	}
+
+	PlayerController->Server_DebugGrantInventoryItem(ItemTag, Count);
+	return true;
+}
+
+bool UProjectBlueprintFunctionLibrary::GrantInventoryItemToPlayer(
+	AProjectPlayerController* PlayerController, const FGameplayTag ItemTag, const int32 Count)
+{
+	if (!IsValid(PlayerController) || !PlayerController->HasAuthority() || !ItemTag.IsValid() || Count <= 0 || Count > 100)
+	{
+		return false;
+	}
+
+	AProjectPlayerState* ProjectPlayerState = PlayerController->GetPlayerState<AProjectPlayerState>();
+	return ProjectPlayerState && ProjectPlayerState->AddInventoryItem(ItemTag, Count);
+}
+
 ULevelManager* UProjectBlueprintFunctionLibrary::GetLevelManager(const UObject* WorldContext)
 {
 	if (!WorldContext) return nullptr;

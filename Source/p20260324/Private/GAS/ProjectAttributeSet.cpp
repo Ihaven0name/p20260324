@@ -101,59 +101,58 @@ void UProjectAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCal
 				if (UCharacterMovementComponent* MovementComponent = TargetCharacter->GetCharacterMovement())
 				{
 					MovementComponent->Launch(KnockBackImpulse);
-				}
-			}
-
-			AActor* TargetActor = Data.Target.GetAvatarActor();
-			if (NewHealth > 0.f && IsValid(TargetActor) && TargetActor->HasAuthority())
-			{
-				const FGameplayEffectContextHandle EffectContext = Data.EffectSpec.GetContext();
-				AActor* SourceActor = EffectContext.GetOriginalInstigator();
-				if (!IsValid(SourceActor))
-				{
-					SourceActor = EffectContext.GetEffectCauser();
-				}
-
-				EHitReactDirection Direction = EHitReactDirection::Front;
-				if (IsValid(SourceActor))
-				{
-					const FVector ToSource = (SourceActor->GetActorLocation() - TargetActor->GetActorLocation()).GetSafeNormal2D();
-					if (!ToSource.IsNearlyZero())
+					AActor* TargetActor = TargetCharacter;
+					if (NewHealth > 0.f)
 					{
-						const float RelativeAngle = FMath::FindDeltaAngleDegrees(
-							TargetActor->GetActorRotation().Yaw,
-							ToSource.Rotation().Yaw);
-						const float AbsAngle = FMath::Abs(RelativeAngle);
-						if (AbsAngle > 135.f)
+						const FGameplayEffectContextHandle EffectContext = Data.EffectSpec.GetContext();
+						AActor* SourceActor = EffectContext.GetOriginalInstigator();
+						if (!IsValid(SourceActor))
 						{
-							Direction = EHitReactDirection::Back;
+							SourceActor = EffectContext.GetEffectCauser();
 						}
-						else if (AbsAngle > 45.f)
+
+						EHitReactDirection Direction = EHitReactDirection::Front;
+						if (IsValid(SourceActor))
 						{
-							Direction = RelativeAngle > 0.f ? EHitReactDirection::Right : EHitReactDirection::Left;
+							const FVector ToSource = (SourceActor->GetActorLocation() - TargetActor->GetActorLocation()).GetSafeNormal2D();
+							if (!ToSource.IsNearlyZero())
+							{
+								const float RelativeAngle = FMath::FindDeltaAngleDegrees(
+									TargetActor->GetActorRotation().Yaw,
+									ToSource.Rotation().Yaw);
+								const float AbsAngle = FMath::Abs(RelativeAngle);
+								if (AbsAngle > 135.f)
+								{
+									Direction = EHitReactDirection::Back;
+								}
+								else if (AbsAngle > 45.f)
+								{
+									Direction = RelativeAngle > 0.f ? EHitReactDirection::Right : EHitReactDirection::Left;
+								}
+							}
 						}
-					}
-				}
 
-				FGameplayEventData EventData;
-				EventData.EventTag = FProjectGameplayTag::Get().Event_Combat_HitReact;
-				EventData.Instigator = SourceActor;
-				EventData.Target = TargetActor;
-				EventData.ContextHandle = EffectContext;
-				EventData.EventMagnitude = static_cast<float>(Direction);
+						FGameplayEventData EventData;
+						EventData.EventTag = FProjectGameplayTag::Get().Event_Combat_HitReact;
+						EventData.Instigator = SourceActor;
+						EventData.Target = TargetActor;
+						EventData.ContextHandle = EffectContext;
+						EventData.EventMagnitude = static_cast<float>(Direction);
 
-				for (const FGameplayAbilitySpec& AbilitySpec : Data.Target.GetActivatableAbilities())
-				{
-					if (AbilitySpec.Ability && AbilitySpec.Ability->GetClass()->IsChildOf(UAbility_HitReact::StaticClass()))
-					{
-						Data.Target.CancelAbilityHandle(AbilitySpec.Handle);
-						Data.Target.TriggerAbilityFromGameplayEvent(
-							AbilitySpec.Handle,
-							Data.Target.AbilityActorInfo.Get(),
-							EventData.EventTag,
-							&EventData,
-							Data.Target);
-						break;
+						for (const FGameplayAbilitySpec& AbilitySpec : Data.Target.GetActivatableAbilities())
+						{
+							if (AbilitySpec.Ability && AbilitySpec.Ability->GetClass()->IsChildOf(UAbility_HitReact::StaticClass()))
+							{
+								Data.Target.CancelAbilityHandle(AbilitySpec.Handle);
+								Data.Target.TriggerAbilityFromGameplayEvent(
+									AbilitySpec.Handle,
+									Data.Target.AbilityActorInfo.Get(),
+									EventData.EventTag,
+									&EventData,
+									Data.Target);
+								break;
+							}
+						}
 					}
 				}
 			}

@@ -110,6 +110,44 @@ const TMap<FGameplayTag, int32>& UInventoryManager::GetItemQuantityMap() const
 	return ItemTagToQuantity;
 }
 
+void UInventoryManager::SyncFromAuthoritativeInventory(const TArray<FInventoryItem>& Items)
+{
+	TMap<FGameplayTag, int32> NewQuantities;
+	for (const FInventoryItem& Item : Items)
+	{
+		if (Item.ItemTag.IsValid() && Item.ItemQuantity > 0)
+		{
+			NewQuantities.Add(Item.ItemTag, Item.ItemQuantity);
+		}
+	}
+
+	TSet<FGameplayTag> ChangedTags;
+	for (const TPair<FGameplayTag, int32>& Existing : ItemTagToQuantity)
+	{
+		if (NewQuantities.FindRef(Existing.Key) != Existing.Value)
+		{
+			ChangedTags.Add(Existing.Key);
+		}
+	}
+	for (const TPair<FGameplayTag, int32>& Updated : NewQuantities)
+	{
+		if (ItemTagToQuantity.FindRef(Updated.Key) != Updated.Value)
+		{
+			ChangedTags.Add(Updated.Key);
+		}
+	}
+
+	ItemTagToQuantity = MoveTemp(NewQuantities);
+	for (const FGameplayTag& ChangedTag : ChangedTags)
+	{
+		OnInventorySingleChanged.Broadcast(ChangedTag, ItemTagToQuantity.FindRef(ChangedTag));
+	}
+	if (!ChangedTags.IsEmpty())
+	{
+		OnInventoryMultiChanged.Broadcast();
+	}
+}
+
 UInventoryInfo* UInventoryManager::GetInventoryInfo()
 {
 	if (InventoryInfo == nullptr)

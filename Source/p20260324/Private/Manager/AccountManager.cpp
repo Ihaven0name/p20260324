@@ -527,6 +527,16 @@ void UAccountManager::SetRoomReady(const FString& RoomId, const bool bReady)
 		FString::Printf(TEXT("/v1/rooms/%s/ready"), *FGenericPlatformHttp::UrlEncode(RoomId)), Body);
 }
 
+void UAccountManager::LeaveRoom(const FString& RoomId)
+{
+	if (RoomId.IsEmpty())
+	{
+		return;
+	}
+	SendRoomRequest(EAccountRoomOperation::LeaveRoom, TEXT("POST"),
+		FString::Printf(TEXT("/v1/rooms/%s/leave"), *FGenericPlatformHttp::UrlEncode(RoomId)));
+}
+
 void UAccountManager::StartRoom(const FString& RoomId)
 {
 	if (RoomId.IsEmpty())

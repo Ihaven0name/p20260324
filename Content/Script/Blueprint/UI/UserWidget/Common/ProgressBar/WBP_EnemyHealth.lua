@@ -68,8 +68,11 @@ function M:AfterSetWidgetController()
     if attributeSet then
         local maxHealth = attributeSet:GetMaxHealthValueForLua()
         local health = attributeSet:GetHealthValueForLua()
-        local percent = maxHealth > 0.0 and health / maxHealth or 0.0
-        self:OnEnemyHealthPercentChangedFunction(percent)
+        -- MaxHealth is replicated independently and may still be zero during initial setup.
+        -- Wait for the attribute-change delegate instead of treating that as a real 0% snapshot.
+        if maxHealth > 0.0 then
+            self:OnEnemyHealthPercentChangedFunction(health / maxHealth)
+        end
     end
 end
 
@@ -80,10 +83,6 @@ function M:OnEnemyHealthPercentChangedFunction(NewPercent)
 
 	-- The first valid replicated snapshot initializes all bars without playing a recovery animation.
 	if not self.bHasInitializedHealthPercent then
-		if NewPercent <= 0.0 then
-			return
-		end
-
 		self:ClearTimer()
 		self.ProgressBar_Green:SetPercent(NewPercent)
 		self.ProgressBar_Red:SetPercent(NewPercent)

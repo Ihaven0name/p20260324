@@ -146,6 +146,9 @@ end
 
 function M:Destruct()
     if self.AccountManager then
+        if self.ActiveRoomId and self.ActiveRoomId ~= "" then
+            self.AccountManager:LeaveRoom(self.ActiveRoomId)
+        end
         self.AccountManager.OnLoginCompleted:Remove(self, self.OnLoginCompleted)
         self.AccountManager.OnRoomRequestCompleted:Remove(self, self.OnRoomRequestCompleted)
         self.AccountManager.OnRoomInvitesReceived:Remove(self, self.OnRoomInvitesReceived)
@@ -632,6 +635,11 @@ function M:OnRoomRequestCompleted(Operation, bSuccess, StatusCode, Message, Room
     end
 
     if Operation == EOperation.JoinRoom then
+        if Room.JoinRequestStatus == "already_member" and Room.RoomId ~= "" then
+            print(string.format("[WBP_Login] 当前账号已在房间 %s，返回房间大厅", Room.RoomId))
+            self:EnterRoom(Room, false)
+            return
+        end
         print(string.format("[WBP_Login] 加入申请已创建：RequestId=%s Status=%s",
             tostring(Room.JoinRequestId), tostring(Room.JoinRequestStatus)))
         if Room.JoinRequestId == "" then

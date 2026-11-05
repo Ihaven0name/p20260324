@@ -1,6 +1,7 @@
 #include "GAS/GA/Crouch/Ability_CrouchCombo.h"
 
 #include "AbilitySystemBlueprintLibrary.h"
+#include "AbilitySystemComponent.h"
 #include "Abilities/Tasks/AbilityTask_ApplyRootMotionMoveToForce.h"
 #include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
 #include "Abilities/Tasks/AbilityTask_WaitInputRelease.h"
@@ -20,7 +21,24 @@ void UAbility_CrouchCombo::ActivateAbility(
 	const FGameplayEventData* TriggerEventData
 )
 {
-	UAbilitySystemBlueprintLibrary::RemoveLooseGameplayTags(GetAvatarActorFromActorInfo(),InputWindowTag,true);
+	if (AActor* AvatarActor = GetAvatarActorFromActorInfo())
+	{
+		if (UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo())
+		{
+			FGameplayTagContainer HeldWindowTags;
+			for (const FGameplayTag& WindowTag : InputWindowTag)
+			{
+				if (ASC->GetTagCount(WindowTag) > 0)
+				{
+					HeldWindowTags.AddTag(WindowTag);
+				}
+			}
+			if (!HeldWindowTags.IsEmpty())
+			{
+				UAbilitySystemBlueprintLibrary::RemoveLooseGameplayTags(AvatarActor, HeldWindowTags, AvatarActor->HasAuthority());
+			}
+		}
+	}
 	CloseToTarget();
 	PlayAttackMontage();
 	
@@ -81,7 +99,11 @@ void UAbility_CrouchCombo::CloseToTarget()
 
 void UAbility_CrouchCombo::PlayAttackMontage()
 {
-	UAbilitySystemBlueprintLibrary::AddLooseGameplayTags(GetAvatarActorFromActorInfo(),OwnedTagInMontage,true);
+	AActor* AvatarActor = GetAvatarActorFromActorInfo();
+	UAbilitySystemBlueprintLibrary::AddLooseGameplayTags(
+		AvatarActor,
+		OwnedTagInMontage,
+		AvatarActor && AvatarActor->HasAuthority());
 	UAbilityTask_PlayMontageAndWait* AbilityTask_PlayMontageAndWait=UAbilityTask_PlayMontageAndWait::CreatePlayMontageAndWaitProxy(
 		this,
 		TEXT("CrouchComboMontageTask"),

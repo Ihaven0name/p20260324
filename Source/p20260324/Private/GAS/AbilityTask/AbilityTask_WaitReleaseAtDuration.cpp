@@ -26,13 +26,17 @@ void UAbilityTask_WaitReleaseAtDuration::Activate()
 				SetWaitingOnRemotePlayerData();
 			}
 		}
-		//客户端和服务器都设置一个Timer，客户端进行预测，服务器进行验证
-  		GetWorld()->GetTimerManager().SetTimer(
-			TimerHandle,
-			this,
-			&ThisClass::OnAtDurationEndFunction,
-			TaskDuration
-		);
+		// The owning client measures the hold duration. GAS validates the
+		// follow-up ability activation on the server.
+		if (IsLocallyControlled())
+		{
+			GetWorld()->GetTimerManager().SetTimer(
+				TimerHandle,
+				this,
+				&ThisClass::OnAtDurationEndFunction,
+				TaskDuration
+			);
+		}
 	}
 }
 
@@ -48,7 +52,9 @@ UAbilityTask_WaitReleaseAtDuration* UAbilityTask_WaitReleaseAtDuration::CreateWa
 
 void UAbilityTask_WaitReleaseAtDuration::OnReleaseCallback()
 {
+	if (bHasResolvedInput) return;
 	if (!RemoveEventAndClearTimer()) return;
+	bHasResolvedInput = true;
 	float ElapsedTime = GetWorld()->GetTimeSeconds() - StartTime;
 	UAbilitySystemComponent* ASC = AbilitySystemComponent.Get();
 	if (IsPredictingClient())
@@ -78,22 +84,15 @@ void UAbilityTask_WaitReleaseAtDuration::OnReleaseCallback()
 
 void UAbilityTask_WaitReleaseAtDuration::OnAtDurationEndFunction()
 {
+	if (bHasResolvedInput || !IsLocallyControlled()) return;
 	if (!RemoveEventAndClearTimer()) return;
-	if (Ability->HasAuthority(&Ability->GetCurrentActivationInfoRef()))
-	{
-		Multicast_OnDurationReached();
-	}
-}
-
-void UAbilityTask_WaitReleaseAtDuration::Multicast_OnDurationReached_Implementation()
-{
-	
+	bHasResolvedInput = true;
 	if (ShouldBroadcastAbilityTaskDelegates())
 	{
-		// false 表示是由计时器触发（长按），而不是由松手触发（短按）
+		// false means the local hold timer reached its threshold.
 		OnAtDurationEndSignature.Broadcast(false);
-		EndTask();
 	}
+	EndTask();
 }
 
 bool UAbilityTask_WaitReleaseAtDuration::RemoveEventAndClearTimer()

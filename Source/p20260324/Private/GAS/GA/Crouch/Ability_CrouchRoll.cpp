@@ -39,6 +39,7 @@ void UAbility_CrouchRoll::ActivateAbility(
 	AbilityTask_PlayMontageAndWait->OnInterrupted.AddDynamic(this,&UAbility_CrouchRoll::RemoveMontageTagAndEndAbility);
 	AbilityTask_PlayMontageAndWait->OnCancelled.AddDynamic(this,&UAbility_CrouchRoll::RemoveMontageTagAndEndAbility);
 	AbilityTask_PlayMontageAndWait->OnCompleted.AddDynamic(this,&UAbility_CrouchRoll::OpenInputWindowAndEndAbility);
+	AbilityTask_PlayMontageAndWait->OnBlendOut.AddDynamic(this,&UAbility_CrouchRoll::OpenInputWindowAndEndAbility);
 	AbilityTask_PlayMontageAndWait->ReadyForActivation();
 }
 

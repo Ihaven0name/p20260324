@@ -141,6 +141,16 @@ public:
 	UFUNCTION(Server, Reliable)
 	void Server_SwitchCharacter(int32 TargetIndex);
 
+	/** Requests a server-authoritative XP-material conversion for this player's character. */
+	UFUNCTION(BlueprintCallable, Category="Inventory")
+	void RequestUpgradeWithExperienceMaterials(int32 SmallCount, int32 MediumCount, int32 LargeCount);
+
+	UFUNCTION(Server, Reliable)
+	void Server_RequestUpgradeWithExperienceMaterials(int32 SmallCount, int32 MediumCount, int32 LargeCount);
+
+	UFUNCTION(Server, Reliable)
+	void Server_DebugGrantInventoryItem(FGameplayTag ItemTag, int32 Count);
+
 	/** 本地死亡界面的重开请求；实际重载由服务器执行。 */
 	UFUNCTION(BlueprintCallable, Category = "Game")
 	void RequestRestartGame();

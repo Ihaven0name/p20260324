@@ -4,11 +4,10 @@
 #include "CommonActivatableWidget.h"
 #include "GameplayTagContainer.h"
 #include "Info/InputActionInfo.h"
+#include "Input/UIActionBindingHandle.h"
 #include "ProjectCommonActivatableWidget.generated.h"
 
 class UInputAction;
-class UEnhancedInputComponent;
-class UProjectBaseWidgetController;
 DECLARE_DYNAMIC_DELEGATE(FOnUIActionExecuted);
 UCLASS()
 class P20260324_API UProjectCommonActivatableWidget : public UCommonActivatableWidget
@@ -60,8 +59,7 @@ private:
 	UPROPERTY()
 	TObjectPtr<UObject> WidgetController;
 
-	// 记录每个 ActionTag 对应的运行时输入绑定句柄，方便失活时解绑
-	TMap<FGameplayTag, uint32> ActionBindingHandles;
+	TMap<FGameplayTag, FUIActionBindingHandle> ActionBindingHandles;
 
 	UPROPERTY()
 	TMap<FGameplayTag, FOnUIActionExecuted> ActionDelegates;
@@ -69,7 +67,4 @@ private:
 	UFUNCTION()
 	void ExecuteActionByTag(FGameplayTag ActionTag);
 
-	bool BindEnhancedInputAction(FGameplayTag ActionTag, const UInputAction* InputAction);
-	UEnhancedInputComponent* GetEnhancedInputComponent() const;
-	
 };

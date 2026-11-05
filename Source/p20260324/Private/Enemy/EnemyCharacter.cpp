@@ -289,7 +289,7 @@ void AEnemyCharacter::UpdateHealthBarByPlayerLocation_Implementation(const FVect
 	const float Scale = FMath::Lerp(HealthBarMaxScale, HealthBarMinScale, Alpha);
 	// 当前血条使用屏幕空间，显示像素尺寸由 DrawSize 控制。
 	HealthWidgetComponent->SetDrawSize(HealthWidgetBaseDrawSize * Scale);
-	GEngine->AddOnScreenDebugMessage(-1,5.f,FColor::Red,FString::Printf(TEXT("Scale: %f"), Scale));
+	
 }
 
 void AEnemyCharacter::BindHealthWidgetCallbacks()
@@ -302,16 +302,24 @@ void AEnemyCharacter::BindHealthWidgetCallbacks()
 	AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(ProjectAS->GetHealthAttribute())
 	.AddLambda([this](const FOnAttributeChangeData& Data)
 	{
-		float MaxHealth = AttributeSet->GetMaxHealth();
-		float Percent = MaxHealth > 0.f ? Data.NewValue / MaxHealth : 0.f;
+		const float MaxHealth = AttributeSet->GetMaxHealth();
+		if (MaxHealth <= UE_SMALL_NUMBER)
+		{
+			return;
+		}
+		const float Percent = FMath::Clamp(Data.NewValue / MaxHealth, 0.0f, 1.0f);
 		OnEnemyHealthPercentChanged.Broadcast(Percent);
 	});
 
 	AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(ProjectAS->GetMaxHealthAttribute())
 	.AddLambda([this](const FOnAttributeChangeData& Data)
 	{
-		float Health = AttributeSet->GetHealth();
-		float Percent = Data.NewValue > 0.f ? Health / Data.NewValue : 0.f;
+		if (Data.NewValue <= UE_SMALL_NUMBER)
+		{
+			return;
+		}
+		const float Health = AttributeSet->GetHealth();
+		const float Percent = FMath::Clamp(Health / Data.NewValue, 0.0f, 1.0f);
 		OnEnemyHealthPercentChanged.Broadcast(Percent);
 	});
 }

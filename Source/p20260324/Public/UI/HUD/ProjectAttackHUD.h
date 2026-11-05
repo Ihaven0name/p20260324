@@ -17,5 +17,8 @@ class P20260324_API AProjectAttackHUD : public AHUD
 {
 	GENERATED_BODY()
 protected:
-	virtual void BeginPlay() override;	
+	virtual void BeginPlay() override;
+public:
+	UFUNCTION(BlueprintCallable)
+	void AddMainUI();
 };

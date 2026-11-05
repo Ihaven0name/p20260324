@@ -2,6 +2,7 @@
 
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
+#include "GameFramework/Actor.h"
 #include "Manager/AbilityTagManager.h"
 
 
@@ -16,6 +17,22 @@ bool UGameplayAbilityBase::CanActivateAbility(const FGameplayAbilitySpecHandle H
 	const FGameplayTagContainer* TargetTags,
 	OUT FGameplayTagContainer* OptionalRelevantTags) const
 {
+	FGameplayTagContainer OwnedTags;
+	if (ActorInfo && ActorInfo->AbilitySystemComponent.IsValid())
+	{
+		ActorInfo->AbilitySystemComponent->GetOwnedGameplayTags(OwnedTags);
+	}
+
+	// Animation input windows decide when the owning client may request the next combo step.
+	// The server validates the combo state below, but must not reject a request just because
+	// its RPC arrived after the server-side animation notify closed.
+	if (ActorInfo && ActorInfo->IsLocallyControlled() && LocalInputWindowRequiredTags.Num() > 0
+		&& ActorInfo->AbilitySystemComponent.IsValid()
+		&& !ActorInfo->AbilitySystemComponent->HasAllMatchingGameplayTags(LocalInputWindowRequiredTags))
+	{
+		return false;
+	}
+
 	// 先走父类所有默认检查（冷却、消耗、AND 标签等）
 	if (!Super::CanActivateAbility(Handle, ActorInfo, SourceTags, TargetTags, OptionalRelevantTags))
 	{
@@ -25,9 +42,6 @@ bool UGameplayAbilityBase::CanActivateAbility(const FGameplayAbilitySpecHandle H
 	// OR 条件检查：只要角色拥有 ActivationRequiredTags_Any 中任意一个 Tag 就通过
 	if (ActivationHasAnyTags.Num() > 0 && ActorInfo && ActorInfo->AbilitySystemComponent.IsValid())
 	{
-		FGameplayTagContainer OwnedTags;
-		ActorInfo->AbilitySystemComponent->GetOwnedGameplayTags(OwnedTags);
-
 		bool bHasAny = false;
 		for (const FGameplayTag& ReqTag : ActivationHasAnyTags)
 		{
@@ -62,7 +76,31 @@ void UGameplayAbilityBase::ActivateAbility(
 )
 {
 	Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
-	UAbilitySystemBlueprintLibrary::RemoveLooseGameplayTags(GetAvatarActorFromActorInfo(),InputWindowTag,true);
+
+	FGameplayTagContainer TagsToConsume = InputWindowTag;
+	for (const FGameplayTag& WindowTag : LocalInputWindowRequiredTags)
+	{
+		TagsToConsume.RemoveTag(WindowTag);
+	}
+	FGameplayTagContainer HeldTagsToConsume;
+	if (UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo())
+	{
+		for (const FGameplayTag& WindowTag : TagsToConsume)
+		{
+			if (ASC->GetTagCount(WindowTag) > 0)
+			{
+				HeldTagsToConsume.AddTag(WindowTag);
+			}
+		}
+	}
+	if (!HeldTagsToConsume.IsEmpty())
+	{
+		AActor* AvatarActor = GetAvatarActorFromActorInfo();
+		UAbilitySystemBlueprintLibrary::RemoveLooseGameplayTags(
+			AvatarActor,
+			HeldTagsToConsume,
+			AvatarActor && AvatarActor->HasAuthority());
+	}
 }
 
 
@@ -83,6 +121,15 @@ bool UGameplayAbilityBase::InitializeTags()
 	BlockAbilitiesWithTag = Config->BlockAbilitiesWithTag;
 	ActivationOwnedTags = Config->ActivationOwnedTags;
 	ActivationRequiredTags = Config->ActivationRequiredTags;
+	LocalInputWindowRequiredTags.Reset();
+	for (const FGameplayTag& WindowTag : InputWindowTag)
+	{
+		if (ActivationRequiredTags.HasTagExact(WindowTag))
+		{
+			LocalInputWindowRequiredTags.AddTag(WindowTag);
+			ActivationRequiredTags.RemoveTag(WindowTag);
+		}
+	}
 	ActivationBlockedTags = Config->ActivationBlockedTags;
 	SourceRequiredTags = Config->SourceRequiredTags;
 	SourceBlockedTags = Config->SourceBlockedTags;
@@ -94,7 +141,11 @@ bool UGameplayAbilityBase::InitializeTags()
 
 void UGameplayAbilityBase::RemoveMontageTagAndEndAbility()
 {
-	UAbilitySystemBlueprintLibrary::RemoveLooseGameplayTags(GetAvatarActorFromActorInfo(),OwnedTagInMontage,true);
+	AActor* AvatarActor = GetAvatarActorFromActorInfo();
+	UAbilitySystemBlueprintLibrary::RemoveLooseGameplayTags(
+		AvatarActor,
+		OwnedTagInMontage,
+		AvatarActor && AvatarActor->HasAuthority());
 	K2_EndAbility();
 }
 

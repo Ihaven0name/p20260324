@@ -1,10 +1,9 @@
 #include "UI/Widget/ProjectCommonActivatableWidget.h"
 
-#include "EnhancedInputComponent.h"
 #include "GAS/ProjectBlueprintFunctionLibrary.h"
 #include "Manager/InputManager.h"
+#include "Input/CommonUIInputTypes.h"
 #include "UnLuaEx.h"
-#include "UI/WidgetController/ProjectBaseWidgetController.h"
 
 UProjectCommonActivatableWidget::UProjectCommonActivatableWidget()
 {
@@ -63,26 +62,42 @@ void UProjectCommonActivatableWidget::ExecuteActionByTag(const FGameplayTag Acti
 	{
 		ActionDelegates[ActionTag].ExecuteIfBound();
 	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("No Lua callback registered for tag: %s"), *ActionTag.ToString());
-	}
 }
 
 void UProjectCommonActivatableWidget::BindAction(const FGameplayTag ActionTag,const UInputAction* InputAction, FOnUIActionExecuted OnUIActionExecuted)
 {
 	ActionDelegates.Add(ActionTag, OnUIActionExecuted);
-	BindEnhancedInputAction(ActionTag, InputAction);
+	if (!InputAction)
+	{
+		return;
+	}
+
+	if (FUIActionBindingHandle* ExistingHandle = ActionBindingHandles.Find(ActionTag))
+	{
+		RemoveActionBinding(*ExistingHandle);
+		ExistingHandle->Unregister();
+	}
+
+	FBindUIActionArgs BindArgs(
+		InputAction,
+		false,
+		FSimpleDelegate::CreateUObject(this, &ThisClass::ExecuteActionByTag, ActionTag));
+	BindArgs.InputMode = CommonInputMode;
+	BindArgs.bConsumeInput = true;
+
+	const FUIActionBindingHandle BindingHandle = RegisterUIActionBinding(BindArgs);
+	if (BindingHandle.IsValid())
+	{
+		ActionBindingHandles.Add(ActionTag, BindingHandle);
+	}
 }
 
 void UProjectCommonActivatableWidget::UnbindActions()
 {
-	if (UEnhancedInputComponent* EnhancedInputComponent = GetEnhancedInputComponent())
+	for (TTuple<FGameplayTag, FUIActionBindingHandle>& Binding : ActionBindingHandles)
 	{
-		for (TTuple<FGameplayTag, uint32>& TempPair : ActionBindingHandles)
-		{
-			EnhancedInputComponent->RemoveBindingByHandle(TempPair.Value);
-		}
+		RemoveActionBinding(Binding.Value);
+		Binding.Value.Unregister();
 	}
 	ActionBindingHandles.Empty();
 }
@@ -92,37 +107,4 @@ void UProjectCommonActivatableWidget::UnregisterActions()
 	UnbindActions();
 	ActionBindingHandles.Empty();
 	ActionDelegates.Empty();
-}
-
-bool UProjectCommonActivatableWidget::BindEnhancedInputAction(const FGameplayTag ActionTag, const UInputAction* InputAction)
-{
-	if (!InputAction) return false;
-
-	if (UEnhancedInputComponent* EnhancedInputComponent = GetEnhancedInputComponent())
-	{
-		if (uint32* OldHandle = ActionBindingHandles.Find(ActionTag))
-			EnhancedInputComponent->RemoveBindingByHandle(*OldHandle);
-
-		FEnhancedInputActionEventBinding& Binding = EnhancedInputComponent->BindAction(
-			InputAction,
-			ETriggerEvent::Started,
-			this,
-			&UProjectCommonActivatableWidget::ExecuteActionByTag,
-			ActionTag);
-
-		ActionBindingHandles.Add(ActionTag, Binding.GetHandle());
-		return true;
-	}
-
-	return false;
-}
-
-UEnhancedInputComponent* UProjectCommonActivatableWidget::GetEnhancedInputComponent() const
-{
-	APlayerController* PlayerController = nullptr;
-	if (const UProjectBaseWidgetController* BaseWidgetController = Cast<UProjectBaseWidgetController>(WidgetController))
-		PlayerController = BaseWidgetController->PlayerController;
-	if (!PlayerController) return nullptr;
-
-	return Cast<UEnhancedInputComponent>(PlayerController->InputComponent);
 }

@@ -20,22 +20,26 @@ function M:AfterSetWidgetController()
     self.InputKeySelector_First.OnKeySelected:Add(self,self.OnKeySelectedFunction_First)
 end
 
-function M:AfterNativeOnActivated()
+function M:RefreshKeyDisplay()
     ---@type UInputManager
     local InputManager = UE.UProjectBlueprintFunctionLibrary.GetInputManager(self)
+    if not InputManager or not self.GroupTag or not self.InputKeySelector_First then
+        return
+    end
+
     local PrimaryChord = UE.FInputChord()
+    self.bIsUpdateFirst = true
     if InputManager:GetCurrentPrimaryKeyByGroupTag(self.GroupTag, PrimaryChord) then
         self.InputKeySelector_First:SetSelectedKey(PrimaryChord)
     else
         self.InputKeySelector_First:SetSelectedKey(UE.FInputChord())
     end
-    self.bIsUpdateFirst=false
+    self.bIsUpdateFirst = false
 end
 
 ---@param SelectedChord FInputChord
 function M:OnKeySelectedFunction_First(SelectedChord)
     if self.bIsUpdateFirst then
-        self.bIsUpdateFirst=false
         return
     end
     self.SettingWidgetController:RemapMappableOneSlotKeyByGroupTag(self.GroupTag,SelectedChord)

@@ -22,11 +22,11 @@
 #include "Interface/EnemyInterface.h"
 #include "Interface/PlayerInterface.h"
 #include "Manager/InputManager.h"
-#include "Abilities/GameplayAbility.h"
 #include "Components/CapsuleComponent.h"
 #include "GAS/ProjectGameplayTag.h"
 #include "Input/ProjectInputComponent.h"
 #include "Manager/UIManager.h"
+#include "p20260324/LogChannel.h"
 #include "GameMode/PlayGameModeBase.h"
 #include "Player/ProjectPlayerState.h"
 #include "UI/HUD/ProjectAttackHUD.h"
@@ -53,12 +53,29 @@ void AProjectPlayerController::BeginPlay()
 
 	if (UInputManager* InputManager = GetGameInstance()->GetSubsystem<UInputManager>())
 	{
-		InputManager->InitializeMappableByPlayerController(this);
+		const bool bInputInitialized = InputManager->InitializeMappableByPlayerController(this);
+		UE_LOG(LogProject, Warning, TEXT("[InputContext] PlayerController initialized input mappings PC=%s LocalPlayer=%s Success=%d"),
+			*GetNameSafe(this), *GetNameSafe(GetLocalPlayer()), bInputInitialized);
 		if (AProjectPlayerCharacter* CurrentPlayerCharacter = GetPlayerCharacter())
 		{
 			SwitchCharacterIMC(CurrentPlayerCharacter->PlayerCategory);
 		}
-		InputManager->ActivateMappedInputMappingContextByTag(FProjectGameplayTag::Get().MappableGroup_Primary, 0);
+		const FGameplayTag PrimaryGroupTag = FProjectGameplayTag::Get().MappableGroup_Primary;
+		const bool bPrimaryContextActivated = InputManager->ActivateMappedInputMappingContextByTag(PrimaryGroupTag, 0);
+		UE_LOG(LogProject, Warning, TEXT("[InputContext] Primary mapping activation PC=%s Tag=%s Success=%d"),
+			*GetNameSafe(this), *PrimaryGroupTag.ToString(), bPrimaryContextActivated);
+	}
+	else
+	{
+		UE_LOG(LogProject, Error, TEXT("[InputContext] PlayerController BeginPlay: InputManager subsystem missing PC=%s"), *GetNameSafe(this));
+	}
+	//需要记笔记，解决DedicatedServer的
+	if (IsLocalController())
+	{
+		if (GetProjectHUD())
+		{
+			ProjectHUD->AddMainUI();
+		}
 	}
 	
 	//TODO:在存档实现之后，需要实现存档加载角色小队
@@ -157,6 +174,8 @@ void AProjectPlayerController::AddAbilityTagToPreInput(const FGameplayTag Abilit
 bool AProjectPlayerController::FindActivatableAbilityTag()
 {
 	if (PreInputTags.IsEmpty()) return false;
+	UProjectAbilitySystemComponent* ASC = GetAbilitySystemComponent();
+	if (!ASC) return false;
 
 	// 获取当前角色的 Category
 	EPlayerCategory CurrentCategory = GetPlayerCharacter()->PlayerCategory;
@@ -171,10 +190,13 @@ bool AProjectPlayerController::FindActivatableAbilityTag()
 	{
 		const FGameplayTag& AbilityTag = PreInputTags[i];
 		FGameplayAbilitySpec Spec;
-		if (UProjectBlueprintFunctionLibrary::CanActivateAbilityAndOutputSpec(GetAbilitySystemComponent(), AbilityTag, Spec))
+		if (UProjectBlueprintFunctionLibrary::CanActivateAbilityAndOutputSpec(ASC, AbilityTag, Spec))
 		{
-			GetAbilitySystemComponent()->TryActivateAbility(Spec.Handle);
-			return true;
+			if (GetAbilitySystemComponent()->TryActivateAbility(Spec.Handle))
+			{
+				PreInputTags.Reset();
+				return true;
+			}
 		}
 	}
 	return false;
@@ -222,7 +244,8 @@ AProjectAttackHUD* AProjectPlayerController::GetProjectHUD()
 void AProjectPlayerController::MoveActionFunction(const FInputActionValue& Value)
 {
 	if (IsGameplayInputBlocked()) return;
-	if (GetAbilitySystemComponent()->HasMatchingGameplayTag(FProjectGameplayTag::Get().Block_InputAction_Move)) return;
+	UProjectAbilitySystemComponent* ASC = GetAbilitySystemComponent();
+	if (ASC && ASC->HasMatchingGameplayTag(FProjectGameplayTag::Get().Block_InputAction_Move)) return;
 
 	FVector2D InputAxisVector=Value.Get<FVector2D>();
 	if (InputAxisVector.Length()>1.f)
@@ -468,4 +491,77 @@ void AProjectPlayerController::Server_SwitchCharacter_Implementation(const int32
 	this->Possess(NewChar);
 
 	NewChar->GetAbilitySystemComponent()->InitAbilityActorInfo(NewChar, NewChar);
+}
+
+void AProjectPlayerController::RequestUpgradeWithExperienceMaterials(
+	const int32 SmallCount, const int32 MediumCount, const int32 LargeCount)
+{
+	if (HasAuthority())
+	{
+		Server_RequestUpgradeWithExperienceMaterials_Implementation(SmallCount, MediumCount, LargeCount);
+	}
+	else
+	{
+		Server_RequestUpgradeWithExperienceMaterials(SmallCount, MediumCount, LargeCount);
+	}
+}
+
+void AProjectPlayerController::Server_RequestUpgradeWithExperienceMaterials_Implementation(
+	const int32 SmallCount, const int32 MediumCount, const int32 LargeCount)
+{
+	if (SmallCount < 0 || MediumCount < 0 || LargeCount < 0 ||
+		(SmallCount == 0 && MediumCount == 0 && LargeCount == 0))
+	{
+		return;
+	}
+
+	AProjectPlayerCharacter* TargetCharacter = Cast<AProjectPlayerCharacter>(GetPawn());
+	AProjectPlayerState* ProjectPlayerState = GetPlayerState<AProjectPlayerState>();
+	UProjectGameInstance* ProjectGameInstance = GetProjectGameInstance();
+	UProjectAbilitySystemComponent* ASC = IsValid(TargetCharacter) ? TargetCharacter->GetAbilitySystemComponent() : nullptr;
+	UConfigManager* ConfigManager = ProjectGameInstance ? ProjectGameInstance->GetSubsystem<UConfigManager>() : nullptr;
+	const UAttributeInfo* AttributeInfo = ConfigManager ? ConfigManager->GetAttributeInfo() : nullptr;
+	if (!IsValid(TargetCharacter) || TargetCharacter->bIsDead || !ProjectPlayerState || !ASC || !AttributeInfo ||
+		!AttributeInfo->AddIncomingXPEffectClass)
+	{
+		return;
+	}
+
+	const FProjectGameplayTag& GameplayTags = FProjectGameplayTag::Get();
+	const int32* SmallXP = ProjectGameInstance->XPTagToXPValue.Find(GameplayTags.Inventory_Material_Experience_Small);
+	const int32* MediumXP = ProjectGameInstance->XPTagToXPValue.Find(GameplayTags.Inventory_Material_Experience_Medium);
+	const int32* LargeXP = ProjectGameInstance->XPTagToXPValue.Find(GameplayTags.Inventory_Material_Experience_Large);
+	if (!SmallXP || !MediumXP || !LargeXP)
+	{
+		return;
+	}
+
+	const int64 TotalXP = static_cast<int64>(SmallCount) * *SmallXP +
+		static_cast<int64>(MediumCount) * *MediumXP + static_cast<int64>(LargeCount) * *LargeXP;
+	if (TotalXP <= 0 || TotalXP > MAX_int32)
+	{
+		return;
+	}
+
+	FGameplayEffectContextHandle Context = ASC->MakeEffectContext();
+	Context.AddSourceObject(TargetCharacter);
+	FGameplayEffectSpecHandle Spec = ASC->MakeOutgoingSpec(AttributeInfo->AddIncomingXPEffectClass, 1.f, Context);
+	if (!Spec.IsValid() || !Spec.Data.IsValid())
+	{
+		return;
+	}
+	UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(
+		Spec, GameplayTags.Attribute_Meta_IncomingXP, static_cast<float>(TotalXP));
+
+	if (!ProjectPlayerState->ConsumeExperienceMaterials(SmallCount, MediumCount, LargeCount))
+	{
+		return;
+	}
+	ASC->ApplyGameplayEffectSpecToSelf(*Spec.Data.Get());
+}
+
+void AProjectPlayerController::Server_DebugGrantInventoryItem_Implementation(
+	const FGameplayTag ItemTag, const int32 Count)
+{
+	UProjectBlueprintFunctionLibrary::GrantInventoryItemToPlayer(this, ItemTag, Count);
 }

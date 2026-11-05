@@ -26,7 +26,8 @@ enum class EAccountRoomOperation : uint8
 	JoinRequestStatus,
 	AcceptJoinRequest,
 	RejectJoinRequest,
-	PresenceHeartbeat
+	PresenceHeartbeat,
+	LeaveRoom
 };
 
 USTRUCT(BlueprintType)
@@ -209,6 +210,10 @@ public:
 	/** 设置当前玩家的准备状态。 */
 	UFUNCTION(BlueprintCallable, Category="账号服务|房间", meta=(DisplayName="设置准备状态"))
 	void SetRoomReady(const FString& RoomId, bool bReady);
+
+	/** 离开等待中的房间；如果调用者是房主则关闭该房间。 */
+	UFUNCTION(BlueprintCallable, Category="账号服务|房间", meta=(DisplayName="离开房间"))
+	void LeaveRoom(const FString& RoomId);
 
 	/** 房主请求分配专用服务器并启动所选地图。 */
 	UFUNCTION(BlueprintCallable, Category="账号服务|房间", meta=(DisplayName="启动房间对局"))

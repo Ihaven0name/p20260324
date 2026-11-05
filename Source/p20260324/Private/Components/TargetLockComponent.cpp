@@ -1,7 +1,6 @@
 #include "Components/TargetLockComponent.h"
 
 #include "GameFramework/Character.h"
-#include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerController.h"
 #include "GAS/ProjectBlueprintFunctionLibrary.h"
 #include "Manager/EnemyManager.h"
@@ -52,7 +51,6 @@ void UTargetLockComponent::ToggleLockOn()
 
 	LockedPawn = PlayerCharacter;
 	PlayerCharacter->bUseControllerRotationYaw = true;
-	PlayerCharacter->GetCharacterMovement()->bOrientRotationToMovement = false;
 	CurrentControlRotation = OwnerPlayerController->GetControlRotation();
 	SetLockTarget(NewTarget);
 }
@@ -124,10 +122,6 @@ void UTargetLockComponent::ResetLock()
 	if (ACharacter* PreviousCharacter = Cast<ACharacter>(LockedPawn.Get()))
 	{
 		PreviousCharacter->bUseControllerRotationYaw = false;
-		if (UCharacterMovementComponent* Movement = PreviousCharacter->GetCharacterMovement())
-		{
-			Movement->bOrientRotationToMovement = true;
-		}
 	}
 
 	LockedPawn.Reset();

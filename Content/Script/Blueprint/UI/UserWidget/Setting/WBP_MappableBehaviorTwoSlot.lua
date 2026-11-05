@@ -24,14 +24,15 @@ function M:AfterSetWidgetController()
     self.SettingWidgetController.OnSettingMappableKeyClearedSignature:Add(self,self.OnMappableKeyCleared)
 end
 
-function M:AfterNativeOnActivated()
+function M:RefreshKeyDisplay()
     ---@type UInputManager
     local InputManager = UE.UProjectBlueprintFunctionLibrary.GetInputManager(self)
-    if not InputManager or not self.GroupTag then
+    if not InputManager or not self.GroupTag or not self.InputKeySelector_First or not self.InputKeySelector_Second then
         return
     end
 
     local PrimaryChord = UE.FInputChord()
+    self.bIsUpdateFirst = true
     if InputManager:GetCurrentPrimaryKeyByGroupTag(self.GroupTag, PrimaryChord) then
         self.InputKeySelector_First:SetSelectedKey(PrimaryChord)
     else
@@ -39,13 +40,14 @@ function M:AfterNativeOnActivated()
     end
 
     local SecondaryChord = UE.FInputChord()
+    self.bIsUpdateSecond = true
     if InputManager:GetCurrentSecondaryKeyByGroupTag(self.GroupTag, SecondaryChord) then
         self.InputKeySelector_Second:SetSelectedKey(SecondaryChord)
     else
         self.InputKeySelector_Second:SetSelectedKey(UE.FInputChord())
     end
-    self.bIsUpdateFirst=false
-    self.bIsUpdateSecond=false
+    self.bIsUpdateFirst = false
+    self.bIsUpdateSecond = false
 end
 
 ---@param SelectedChord FInputChord

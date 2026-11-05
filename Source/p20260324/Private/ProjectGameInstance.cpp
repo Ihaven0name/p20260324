@@ -1,5 +1,7 @@
 #include "ProjectGameInstance.h"
 
+#include "GameFramework/GameUserSettings.h"
+#include "GenericPlatform/GenericApplication.h"
 #include "GAS/ProjectGameplayTag.h"
 #include "Manager/AccountManager.h"
 
@@ -22,6 +24,29 @@ FString UProjectGameInstance::GetSaveSlotName(const EProjectSaveSlotName InSaveS
 void UProjectGameInstance::Init()
 {
 	Super::Init();
+
+	// Keep editor and dedicated-server windows untouched; this default is for the packaged game.
+	if (FApp::CanEverRender() && !GIsEditor)
+	{
+		FDisplayMetrics DisplayMetrics;
+		FDisplayMetrics::RebuildDisplayMetrics(DisplayMetrics);
+
+		if (DisplayMetrics.PrimaryDisplayWidth > 0 && DisplayMetrics.PrimaryDisplayHeight > 0)
+		{
+			const int32 WindowWidth = DisplayMetrics.PrimaryDisplayWidth / 2;
+			const int32 WindowHeight = DisplayMetrics.PrimaryDisplayHeight / 2;
+
+			if (UGameUserSettings* UserSettings = UGameUserSettings::GetGameUserSettings())
+			{
+				UserSettings->SetFullscreenMode(EWindowMode::Windowed);
+				UserSettings->SetScreenResolution(FIntPoint(WindowWidth, WindowHeight));
+				UserSettings->SetWindowPosition(
+					(DisplayMetrics.PrimaryDisplayWidth - WindowWidth) / 2,
+					(DisplayMetrics.PrimaryDisplayHeight - WindowHeight) / 2);
+				UserSettings->ApplySettings(false);
+			}
+		}
+	}
 
 	const FProjectGameplayTag& GameplayTags = FProjectGameplayTag::Get();
 

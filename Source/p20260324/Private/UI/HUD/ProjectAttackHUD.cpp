@@ -15,6 +15,10 @@
 void AProjectAttackHUD::BeginPlay()
 {
 	Super::BeginPlay();
+}
+
+void AProjectAttackHUD::AddMainUI()
+{
 	UUIManager* UIManager= UProjectBlueprintFunctionLibrary::GetUIManager(GetOwningPlayerController());
 	UIManager->AddMainUI();
 	UIManager->PushWidget(FProjectGameplayTag::Get().UI_Widget_MainAttack);

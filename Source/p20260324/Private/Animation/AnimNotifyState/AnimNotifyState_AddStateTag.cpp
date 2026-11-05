@@ -10,8 +10,10 @@ void UAnimNotifyState_AddStateTag::NotifyBegin(
 )
 {
 	Super::NotifyBegin(MeshComp, Animation, TotalDuration, EventReference);
-	UAbilitySystemBlueprintLibrary::RemoveLooseGameplayTags(MeshComp->GetOwner(),AddStateTags);
-	UAbilitySystemBlueprintLibrary::AddLooseGameplayTags(MeshComp->GetOwner(),AddStateTags);
+	if (AActor* Owner = MeshComp ? MeshComp->GetOwner() : nullptr)
+	{
+		UAbilitySystemBlueprintLibrary::AddLooseGameplayTags(Owner, AddStateTags);
+	}
 }
 
 void UAnimNotifyState_AddStateTag::NotifyEnd(
@@ -20,6 +22,9 @@ void UAnimNotifyState_AddStateTag::NotifyEnd(
 	const FAnimNotifyEventReference& EventReference
 )
 {
-	UAbilitySystemBlueprintLibrary::RemoveLooseGameplayTags(MeshComp->GetOwner(),AddStateTags);
+	if (AActor* Owner = MeshComp ? MeshComp->GetOwner() : nullptr)
+	{
+		UAbilitySystemBlueprintLibrary::RemoveLooseGameplayTags(Owner, AddStateTags);
+	}
 	Super::NotifyEnd(MeshComp, Animation, EventReference);
 }
